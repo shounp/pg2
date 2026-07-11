@@ -1,0 +1,137 @@
+
+\documentclass[twoside,openany]{abntex2-ufes}        % Imprimir frente e verso
+% Importa��es de pacotes
+\usepackage[abnt-emphasize=bf, bibjustif, recuo=0cm, abnt-etal-cite=2, abnt-etal-list=0]{abntex2cite}  % Cita��es padr�o ABNT
+\usepackage{cmap}	% Mapear caracteres especiais no PDF
+\usepackage{gensymb}
+\usepackage{lmodern}	% Usa a fonte Latin Modern
+\usepackage{palatino} % Usa a fonte Palatino
+%\usepackage[T1]{fontenc}% Selecao de codigos de fonte.
+\usepackage{lastpage}	% Usado pela Ficha catalogr�fica
+\usepackage{indentfirst}% Indenta o primeiro par�grafo de cada se��o.
+\usepackage{xcolor}
+\usepackage[normalem]{ulem} % para o underline colorido
+%\usepackage[latin1]{inputenc}
+%\usepackage[brazil]{babel}
+\usepackage{microtype}
+\usepackage{cite}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+% \usepackage{times}
+%--------------------------------------
+ 
+%Portuguese-specific commands
+%--------------------------------------
+%\usepackage[portuguese]{babel}
+
+\usepackage{ae}
+\usepackage{xcolor}
+\usepackage{epsfig}
+\usepackage{graphicx}
+\usepackage{epstopdf}
+\DeclareGraphicsExtensions{.pdf,.jpeg,.eps,.png}
+\usepackage{units}                % Utilize da seguinte forma \unit[78,6]{mA}
+\usepackage{subfig}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{amsfonts, amssymb, amsmath}             % Fonte e s�mbolos matem�ticos
+\usepackage{booktabs}                               % Comandos para tabelas
+\usepackage{verbatim}                               % Texto � interpretado como escrito no documento
+\usepackage{multirow, array}                        % M�ltiplas linhas e colunas em tabelas
+\usepackage{indentfirst}                            % Endenta o primeiro par�grafo de cada se��o.
+% \usepackage{microtype}                              % Para melhorias de justifica��o?
+\usepackage[algoruled, portuguese]{algorithm2e}     % Escrever algoritmos
+\usepackage{float}                                  % Utilizado para cria��o de floats
+\usepackage{color}
+\usepackage{amsthm}
+\usepackage{booktabs}
+\usepackage{stmaryrd}
+\usepackage{url}
+\usepackage[figuresright]{rotating}
+\bibliographystyle{abntex2-alf}
+\usepackage[brazilian,hyperpageref]{backref}
+\usepackage{hyperref}
+\usepackage{footnotebackref}
+\usepackage{nomencl}
+\usepackage{dirtytalk}
+\usepackage{blindtext, graphicx}% para inserir texto aliatório
+\usepackage{lastpage}
+\hyphenation{mul-ti-ple-xa-ção}
+\makenomenclature
+
+
+% Inclui o pre�mbulo do documento
+\include{./01-elementos-pre-textuais/preambulo}
+%\counterwithin{figure}{section} %para numera��o por cap�tulos
+
+% Define as cores dos links e informa��es do PDF
+\makeatletter
+\hypersetup{
+    portuguese,
+    colorlinks,
+    linkcolor=blue,
+    citecolor=blue,
+    filecolor=blue,
+    urlcolor=blue,
+    breaklinks=true,
+    pdftitle={\@title},
+    pdfauthor={\@author},
+    pdfsubject={\imprimirpreambulo},
+    pdfkeywords={OFDM}{Detecção coerente}{constante envoltória}{PAPR}
+}
+\makeatother
+
+% Redefini��o de labels
+\renewcommand{\algorithmautorefname}{Algoritmo}
+\def\equationautorefname~#1\null{Equação1)\null}
+
+% Cria o �ndice remissivo
+\makeindex
+
+% In�cio do documento
+\begin{document}
+
+    % Retira espa�o extra obsoleto entre as frases.
+    \frenchspacing
+
+    % Elementos pr� textuais
+    \pretextual
+    \include{./01-elementos-pre-textuais/capa}              % Capa
+    \include{./01-elementos-pre-textuais/folhaRosto}        % Folha de rosto
+    \include{./01-elementos-pre-textuais/folhaAprovacao}    % Folha de aprova��o
+    \include{./01-elementos-pre-textuais/fichacatalografica}% Ficha
+    \include{./01-elementos-pre-textuais/dedicatoria}       % Dedicat�ria
+    \include{./01-elementos-pre-textuais/agradecimentos}    % Agradecimentos
+    \include{./01-elementos-pre-textuais/epigrafe}          % Ep�grafe
+    \include{./01-elementos-pre-textuais/resumoPt}          % Resumo na l�ngua vern�cula
+    \include{./01-elementos-pre-textuais/resumoEn}          % Resumo em l�ngua estrangeira
+    \include{./01-elementos-pre-textuais/listaFiguras}      % Lista de figuras
+    \include{./01-elementos-pre-textuais/listaTabelas}      % Lista de tabelas
+   % \include{./01-elementos-pre-textuais/listaQuadros}      % Lista de quadros
+   % \include{./01-elementos-pre-textuais/listaAlgoritmos}   % Lista de algoritmos
+   
+   \include{./01-elementos-pre-textuais/listaSiglas}       % Lista de abreviaturas e siglas
+   % \include{./01-elementos-pre-textuais/listaSimbolos}     % Lista de s�mbolos
+    \include{./01-elementos-pre-textuais/sumario}           % Sum�rio
+
+    % Elementos textuais
+    \textual
+    \include{./02-elementos-textuais/introducao}            % Introdu��o
+    \include{./02-elementos-textuais/capitulo2}             % Fundamentação teórica
+    \include{./02-elementos-textuais/metodologia}           % Metodologia
+	%\include{./02-elementos-textuais/capitulo3}             % descriçõ de OFDM
+    %\include{./02-elementos-textuais/capitulo3-1}             % descriçõ de OFDM
+   % \include{./02-elementos-textuais/PAPR_reduction} % Trabalhos relacionados
+    %\include{./02-elementos-textuais/fundamentacaoTeorica}  % Fundamenta��o te�rica
+    %\include{./02-elementos-textuais/resultados}            % Resultados
+    %\include{./02-elementos-textuais/conclusao}             % Conclus�o
+
+    % Elementos p�s textuais
+    \postextual  
+     \include{./03-elementos-pos-textuais/referencias}       % Refer�ncias
+   % \include{./03-elementos-pos-textuais/glossario}        % Gloss�rio
+   % \include{./03-elementos-pos-textuais/apendices}         % Ap�ndices
+   % \include{./03-elementos-pos-textuais/anexos}            % Anexos
+    %\printindex                                             % �ndice remissivo
+
+\end{document}

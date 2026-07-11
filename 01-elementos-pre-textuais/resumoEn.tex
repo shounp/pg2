@@ -1,0 +1,17 @@
+%
+% Documento: Abstract
+%
+
+\begin{abstract}
+
+This work presents the development of a passive UHF RFID reader prototype intended for asset inventory. The adopted scope focuses on the physical and embedded layers, comprising a YPD-R200 module, a 5~dBi external antenna, passive tags, and an Arduino. The proposal replaces an initial NFC-based design whose short operating distance requires the reader to approach each item individually and limits the inspection of environments containing many assets.
+
+The prototype uses the YPD-R200 TTL UART interface. Its communication library was adapted to the Arduino Uno/Nano through a generic serial-stream abstraction and a software-based UART. Command transmission, output-power configuration, and EPC identifier acquisition were implemented. Antenna and tag construction are also examined because performance depends on polarization, orientation, object material, and inlay geometry rather than solely on the tag integrated circuit.
+
+The primary application is a portable inventory of assets located in a room. Fixed reading points at doorways are discussed as an architectural extension for movement records, without equating tag detection with reliable movement-direction estimation. The EPC UHF Gen2/ISO/IEC 18000-63 protocol provides air-interface anti-collision; the embedded software must control inventory rounds, receive frames, remove duplicates, and record metrics.
+
+Basic integration and individual tag reading were achieved, whereas quantitative validation of range, stability, and simultaneous reading still requires controlled experiments. Therefore, this work does not claim a complete asset-management system; it establishes and critically evaluates the reading prototype that may support such an application.
+
+\textbf{Keywords:} UHF RFID. Asset inventory. YPD-R200. Passive tags. Anti-collision.
+
+\end{abstract}

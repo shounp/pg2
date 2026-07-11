@@ -1,0 +1,66 @@
+%
+% Documento: Introdução
+%
+
+\chapter{Introdução}
+\label{cap:introducao}
+
+\section{Contextualização}
+
+O controle patrimonial depende da correspondência entre o registro administrativo e a situação física de cada bem. Além do cadastro contábil, esse processo envolve localização, conferência periódica, transferência de responsabilidade, manutenção e baixa. Em universidades, laboratórios, almoxarifados e repartições públicas, a dispersão dos ativos por diferentes ambientes torna a atualização do inventário uma atividade repetitiva e sujeita a divergências.
+
+Etiquetas numéricas e códigos de barras apresentam baixo custo e ampla adoção, mas exigem linha de visada e uma ação individual sobre cada item. A identificação por radiofrequência, ou RFID (\textit{Radio Frequency Identification}), permite obter identificadores sem contato óptico direto e, em sistemas UHF passivos, realizar inventários de múltiplas etiquetas dentro de uma zona de leitura. Aplicações relatadas na literatura indicam o uso da tecnologia na identificação de equipamentos, gestão de estoque e rastreamento de ativos \cite{chen2022inventory,ibrahim2018lab,iorga2026}.
+
+A concepção inicial deste trabalho utilizava NFC (\textit{Near Field Communication}) e um dispositivo Android. Essa abordagem é adequada a interações deliberadas e de proximidade, mas preserva a necessidade de aproximar o telefone de cada etiqueta. Para o inventário de uma sala com dezenas de bens, tal característica reduz o ganho operacional em relação à leitura óptica. A mudança para RFID UHF decorre, portanto, de um requisito do problema: ampliar a zona de leitura e permitir a identificação de várias tags passivas durante uma mesma operação.
+
+O protótipo adotado é composto por um módulo YPD-R200, uma antena Airplux APCA8090 de 5~dBi, etiquetas Avery Dennison Smartrac AD-239 M730 e um Arduino. Seu uso principal é o inventário portátil: o operador percorre um ambiente e registra os EPCs (\textit{Electronic Product Codes}) detectados. Uma segunda possibilidade consiste em instalar leitores em pontos de passagem para registrar o instante em que um bem é observado. Esse segundo cenário é tratado como extensão arquitetural, pois detectar uma tag em uma porta não é suficiente, isoladamente, para determinar se o bem entrou ou saiu.
+
+\section{Problema de pesquisa}
+
+O problema central não é apenas ler uma etiqueta a uma distância máxima, mas produzir uma leitura útil para inventário. Isso exige considerar a cobertura real da antena, a orientação da tag, o material do objeto, a alimentação do leitor, a perda de quadros na interface serial e a capacidade de distinguir todas as etiquetas presentes. Um valor nominal de alcance fornecido por um vendedor não assegura repetibilidade em ambiente interno.
+
+Também é necessário separar duas responsabilidades. O protocolo EPC UHF Gen2, harmonizado com a ISO/IEC 18000-63, define o inventário e o mecanismo anticolisão da interface aérea. O código executado no Arduino não substitui esse protocolo; ele comanda o módulo, recebe as notificações, elimina leituras duplicadas e contabiliza quais EPCs foram observados. Se essas etapas forem confundidas, o sistema pode aparentar sucesso ao ler repetidamente uma mesma tag enquanto deixa de detectar outras.
+
+Diante desse contexto, estabelece-se a seguinte questão de pesquisa:
+
+\begin{citacao}
+Em quais condições um protótipo formado pelo leitor YPD-R200, pela antena Airplux APCA8090, pela etiqueta AD-239 M730 e por um microcontrolador pode realizar inventário patrimonial portátil com leituras repetíveis e servir como base técnica para pontos fixos de detecção de movimentação?
+\end{citacao}
+
+\section{Hipótese}
+
+A hipótese de trabalho é que o YPD-R200 pode viabilizar o inventário portátil de pequenos ambientes quando operado com alimentação adequada, interface serial estável, antena APCA8090 configurada na faixa regulamentada e etiquetas AD-239 M730 aplicadas em superfícies compatíveis. Espera-se, entretanto, que a AD-239 M730 apresente degradação quando aplicada diretamente sobre metal, pois seu datasheet a classifica como etiqueta para superfícies não metálicas. Também se espera que a leitura de múltiplas etiquetas exija tratamento de vários quadros e eliminação de duplicatas no microcontrolador.
+
+Para pontos fixos, assume-se que o mesmo módulo pode detectar a passagem de bens etiquetados, mas não inferir com robustez o sentido do deslocamento usando apenas uma zona de leitura. A determinação de entrada e saída exige pelo menos duas observações espacialmente distinguíveis, sensores auxiliares ou técnicas adicionais baseadas em RSSI, fase ou diversidade de antenas \cite{wang2022rfaccess}.
+
+\section{Justificativa}
+
+A substituição do NFC por RFID UHF é justificada pela necessidade de reduzir o trabalho item a item durante a conferência física. Neste trabalho, o recorte técnico é limitado à etiqueta AD-239 M730. Essa delimitação evita tratar ``tag UHF'' como um componente genérico e obriga a análise do conjunto real utilizado: circuito integrado Impinj M730, antena do inlay, encapsulamento, superfície de instalação, leitor YPD-R200 e antena APCA8090 \cite{rao2005uhf,avery2022ad239m730}.
+
+O recorte do trabalho permanece deliberadamente restrito ao protótipo de leitura. Não fazem parte do escopo a implementação de um sistema institucional completo, o banco de dados patrimonial, a autenticação de usuários, a integração contábil ou uma aplicação móvel final. Esses componentes são relevantes para uma solução operacional, mas sua inclusão impediria testar com rigor a camada que constitui a contribuição deste TCC: a combinação leitor--antena--tag, a aquisição embarcada e o comportamento em diferentes condições de inventário.
+
+O trabalho é relevante por produzir uma avaliação reprodutível de um módulo de baixo custo. Em vez de aceitar a distância anunciada como resultado, propõe-se medir alcance repetível, taxa de sucesso, cobertura angular, influência do material e recuperação de uma população conhecida de tags. Os resultados podem orientar a continuidade do projeto e impedir que uma futura camada de software seja construída sobre uma infraestrutura de leitura inadequada.
+
+\section{Objetivos}
+
+\subsection{Objetivo geral}
+
+Desenvolver e avaliar um protótipo de leitor RFID UHF passivo, baseado no módulo YPD-R200 e em um microcontrolador, para inventário portátil de bens patrimoniais e análise de sua aplicação como núcleo de pontos fixos de detecção.
+
+\subsection{Objetivos específicos}
+
+\begin{itemize}
+    \item caracterizar o módulo YPD-R200, a antena Airplux APCA8090 e as interfaces elétricas utilizadas no protótipo;
+    \item adaptar a comunicação serial e o tratamento dos quadros do leitor para a plataforma Arduino;
+    \item distinguir o mecanismo anticolisão executado pelo protocolo EPC UHF Gen2 do tratamento de múltiplas leituras realizado no microcontrolador;
+    \item avaliar a etiqueta AD-239 M730 em diferentes distâncias, orientações e superfícies de fixação;
+    \item medir alcance repetível, taxa de sucesso, influência da orientação e efeito do material de fixação;
+    \item avaliar a recuperação de populações conhecidas de tags durante rodadas de inventário;
+    \item definir os requisitos adicionais para empregar o protótipo em um leitor portátil e em pontos fixos de registro de movimentação.
+\end{itemize}
+
+\section{Delimitação do escopo}
+
+O protótipo deve demonstrar aquisição de EPCs e permitir experimentos controlados. A associação definitiva entre EPC e número patrimonial, a persistência em banco de dados e a interface com o usuário são consideradas entradas ou saídas externas ao experimento. Da mesma forma, o trabalho não afirma implementar localização contínua de ativos dentro de uma sala: RFID UHF identifica tags dentro de uma zona de leitura, mas localização e direção exigem infraestrutura e processamento adicionais.
+
+Os ensaios concentram-se em pequenas populações de etiquetas AD-239 M730 e em distâncias compatíveis com o conjunto adquirido. A extrapolação para outras etiquetas, centenas de tags, portais industriais ou cobertura integral de edifícios não será feita sem dados. Essa delimitação mantém coerência entre os recursos disponíveis, o tempo de execução e as conclusões que o protótipo pode sustentar.

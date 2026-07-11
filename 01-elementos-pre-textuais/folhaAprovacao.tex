@@ -1,0 +1,54 @@
+%
+% Documento: Folha de aprovação
+%
+
+\makeatletter
+\begin{folhadeaprovacao}
+
+    \begin{center}
+        {\large\normalfont\scshape\textbf\imprimirautor}
+    \end{center}
+
+    \vspace*{5pt}
+
+    \begin{center}
+        \ABNTEXchapterfont\Large\scshape\imprimirtitulo
+        \abntex@ifnotempty{\imprimirsubtitulo}{%
+            {\ABNTEXchapterfont\Large\scshape: }{\ABNTEXchapterfont\large\scshape\imprimirsubtitulo}
+        }
+    \end{center}
+
+    \vspace*{2pt}
+
+    \abntex@ifnotempty{\imprimirpreambulo}{%
+        \SingleSpacing
+        \begin{tabular}{p{.24\textwidth}p{.15\textwidth}p{.44\textwidth}}
+            & \multicolumn{2}{p{.6\textwidth}}{\small\hyphenpenalty=10000{\imprimirpreambulo}} \\ & & \\
+        \end{tabular}
+    }
+
+    \vspace*{5pt}
+
+    %\begin{center}
+       % Trabalho aprovado. \imprimirlocal, %\imprimirdataaprovacao
+    %\end{center}
+
+    \begin{center}
+        \assinatura{\textbf{\imprimirorientador} \\ Orientador}
+         \assinatura{\textbf{\imprimircoorientador} \\ Coorientador}
+        \assinatura{\textbf{Professor} \\ Carlos Alberto Dalarmelina}
+        \assinatura{\textbf{Professor} \\ Guilherme Fernandes de Souza Miguel}
+        \assinatura{\textbf{Professor} \\ Pedro Felipe do Prado}
+    \end{center}
+
+    \vspace*{\fill}
+
+    \begin{center}
+        \normalfont\scshape{\imprimirinstituicao}\\
+        \normalfont\scshape{\imprimirprograma}\\
+        \normalfont\scshape{\imprimirlocal}\\
+        \normalfont\scshape{\imprimirdata}
+    \end{center}
+
+\end{folhadeaprovacao}
+\makeatother

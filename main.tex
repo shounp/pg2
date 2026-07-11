@@ -1,0 +1,98 @@
+\documentclass[twoside,openany]{abntex2-ufes}
+
+% Codificação, fonte e qualidade tipográfica
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{cmap}
+\usepackage{microtype}
+\usepackage{indentfirst}
+
+% Figuras, tabelas, equações e algoritmos
+\usepackage{graphicx}
+\usepackage{epstopdf}
+\DeclareGraphicsExtensions{.pdf,.jpeg,.eps,.png}
+\usepackage{float}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{amsfonts,amssymb,amsmath}
+\usepackage[algoruled,portuguese]{algorithm2e}
+
+% Recursos textuais e elementos pré/pós-textuais
+\usepackage[normalem]{ulem}
+\usepackage{verbatim}
+\usepackage{url}
+\usepackage{lastpage}
+\usepackage{nomencl}
+\makenomenclature
+
+% Citações e links
+\usepackage[
+    abnt-emphasize=bf,
+    bibjustif,
+    recuo=0cm,
+    abnt-etal-cite=2,
+    abnt-etal-list=0
+]{abntex2cite}
+\bibliographystyle{abntex2-alf}
+\usepackage[brazilian,hyperpageref]{backref}
+\usepackage{hyperref}
+\usepackage{footnotebackref}
+
+\input{./01-elementos-pre-textuais/preambulo}
+
+\makeatletter
+\hypersetup{
+    portuguese,
+    colorlinks,
+    linkcolor=blue,
+    citecolor=blue,
+    filecolor=blue,
+    urlcolor=blue,
+    breaklinks=true,
+    hypertexnames=false,
+    pdftitle={\@title},
+    pdfauthor={\@author},
+    pdfsubject={\imprimirpreambulo},
+    pdfkeywords={RFID UHF}{inventário patrimonial}{YPD-R200}{etiquetas passivas}{Arduino}
+}
+\makeatother
+
+\renewcommand{\algorithmautorefname}{Algoritmo}
+\providecommand*{\equationautorefname}{Equação}
+\makeindex
+
+\begin{document}
+
+    \frenchspacing
+
+    \pretextual
+    \include{./01-elementos-pre-textuais/capa}
+    \include{./01-elementos-pre-textuais/folhaRosto}
+    \include{./01-elementos-pre-textuais/folhaAprovacao}
+    \include{./01-elementos-pre-textuais/fichacatalografica}
+    \include{./01-elementos-pre-textuais/dedicatoria}
+    \include{./01-elementos-pre-textuais/agradecimentos}
+    \include{./01-elementos-pre-textuais/epigrafe}
+    \include{./01-elementos-pre-textuais/resumoPt}
+    \include{./01-elementos-pre-textuais/resumoEn}
+    \include{./01-elementos-pre-textuais/listaFiguras}
+    \include{./01-elementos-pre-textuais/listaTabelas}
+    \include{./01-elementos-pre-textuais/listaSiglas}
+    \include{./01-elementos-pre-textuais/sumario}
+
+    \textual
+    \include{./02-elementos-textuais/introducao}
+    \include{./02-elementos-textuais/capitulo2}
+    \include{./02-elementos-textuais/trabalhosRelacionados}
+    \include{./02-elementos-textuais/metodologia}
+    \include{./02-elementos-textuais/resultados}
+    \include{./02-elementos-textuais/conclusao}
+
+    \postextual
+    \include{./03-elementos-pos-textuais/referencias}
+
+\end{document}

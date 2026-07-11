@@ -1,0 +1,127 @@
+%
+% Documento: Fundamentação teórica
+%
+
+\chapter{Fundamentação teórica}
+\label{cap:fundamentacao}
+
+\section{RFID aplicado ao inventário patrimonial}
+
+Um sistema RFID é formado, em sua configuração básica, por um interrogador, uma ou mais antenas e etiquetas associadas aos objetos. O interrogador transmite energia e comandos; a tag recebe o sinal, processa a solicitação e devolve seu identificador. Em aplicações patrimoniais, o EPC pode funcionar como chave de associação ao registro administrativo do bem. Os atributos do ativo não precisam ser gravados integralmente na tag, pois podem permanecer em um sistema externo ligado ao identificador.
+
+Etiquetas RFID podem ser ativas, semipassivas ou passivas. As tags ativas possuem fonte própria de energia e podem alcançar distâncias maiores, mas aumentam custo e manutenção. As etiquetas passivas são energizadas pelo campo do leitor, dispensam bateria e são adequadas à identificação em escala \cite{chawla2007passive}. Este trabalho utiliza etiquetas passivas UHF, pois o objetivo é conferir vários bens a uma distância superior à obtida com NFC.
+
+RFID não elimina automaticamente os problemas do inventário. Uma tag fora da zona de leitura, aplicada sobre material inadequado ou orientada em um nulo do campo pode deixar de responder. Também podem ocorrer leituras externas ao ambiente que se pretendia conferir. Portanto, a utilidade do sistema depende tanto da taxa de identificação dos bens presentes quanto do controle espacial da zona de leitura.
+
+\section{NFC, HF e RFID UHF}
+
+NFC opera em 13,56~MHz e utiliza acoplamento de campo próximo. Sua distância reduzida é desejável em pagamentos, autenticação e interações intencionais, mas obriga o operador a aproximar o dispositivo de cada objeto. RFID UHF passivo opera, conforme a região, em porções da faixa entre aproximadamente 860 e 960~MHz e utiliza propagação em campo distante e retroespalhamento, o que permite leituras a alguns metros \cite{turner2007nearfield,rao2005uhf}.
+
+No retroespalhamento, a etiqueta altera a impedância ligada à própria antena e, consequentemente, modula a parcela do sinal refletida ao interrogador. A distância útil depende do enlace de ida, que deve fornecer energia suficiente ao chip, e do enlace de retorno, que deve produzir sinal detectável no receptor. Potência configurada, ganho, perdas em cabos e conectores, sensibilidade da tag, polarização e multipercurso participam desse resultado \cite{wang2009uhf,thomas2012qam}.
+
+Por essa razão, ``alcance'' não é uma constante do leitor. Trata-se de uma propriedade do conjunto leitor--antena--tag em uma configuração e ambiente específicos. A distância máxima de uma leitura isolada também não equivale a alcance operacional; para inventário, interessa a distância na qual a identificação é repetível.
+
+\section{Interface aérea e regulamentação}
+
+\subsection{ISO/IEC 18000-63 e EPC UHF Gen2}
+
+A ISO/IEC 18000-63 especifica a interface aérea para RFID UHF passivo do tipo C, na faixa de 860 a 960~MHz \cite{iso1800063}. O protocolo EPC UHF Gen2 da GS1 é harmonizado com esse padrão e define requisitos físicos, comandos, estados, sessões, seleção de populações e acesso às memórias das tags \cite{gs1gen2}.
+
+A compatibilidade com esse protocolo é o critério principal para interoperabilidade entre o YPD-R200 e a etiqueta AD-239 M730. Este trabalho restringe a análise a essa etiqueta, pois o desempenho continuará dependente do projeto da antena do inlay, da instalação no bem e da orientação em relação à antena APCA8090.
+
+\subsection{Uso do espectro no Brasil}
+
+No Brasil, equipamentos RFID enquadram-se nos requisitos de radiação restrita. O Ato Anatel n.\ 14.448/2017, em sua redação consolidada, apresenta faixas e limites aplicáveis a sistemas RFID, incluindo 902--907,5~MHz e 915--928~MHz para interrogadores UHF \cite{anatelrfid}. A faixa ampla de 860--960~MHz impressa em antenas e etiquetas indica cobertura de projeto, mas não autoriza a transmissão em todo esse intervalo.
+
+O módulo deve ser configurado para a região correta e o equipamento utilizado em uma implantação deve ser homologado ou integrar produto cuja certificação seja aceita pela Anatel. Ensaios acadêmicos não justificam operar em canais inadequados ou exceder os limites de emissão. A configuração regional deve ser registrada em cada experimento, assim como potência, antena e ambiente.
+
+\section{Inventário de múltiplas etiquetas e anticolisão}
+
+Quando várias tags recebem uma consulta, respostas simultâneas podem colidir. O EPC Gen2 organiza o inventário por um protocolo probabilístico de slots. O interrogador envia uma consulta contendo o parâmetro $Q$; cada tag participante escolhe aleatoriamente um contador entre 0 e $2^Q-1$. Tags cujo contador é zero respondem, enquanto as demais aguardam comandos que avançam ou ajustam a rodada \cite{gs1gen2}.
+
+Assim, o anticolisão da interface aérea é executado pelo firmware do leitor em cooperação com as tags. Não é correto descrever o Arduino como responsável por resolver colisões de RF. As responsabilidades do programa embarcado são:
+
+\begin{itemize}
+    \item iniciar e interromper a rodada de inventário;
+    \item configurar, quando suportado, parâmetros de consulta e sessão;
+    \item receber todos os quadros produzidos pelo módulo;
+    \item validar o enquadramento e o byte de verificação;
+    \item eliminar EPCs duplicados dentro da janela de inventário;
+    \item registrar contagem, tempo, RSSI bruto e erros de recepção.
+\end{itemize}
+
+Algoritmos acadêmicos podem melhorar a escolha de parâmetros ou substituir estratégias de inventário em leitores experimentais \cite{su2019anticollision}. No protótipo deste trabalho, contudo, o ponto de partida deve ser o mecanismo Gen2 já implementado no YPD-R200. A contribuição embarcada está na aquisição confiável e na avaliação de sua capacidade, não na reimplementação da camada física.
+
+\section{Antenas e formação da zona de leitura}
+
+\subsection{Ganho e largura de feixe}
+
+O ganho em dBi expressa a concentração da radiação em determinadas direções em relação a uma fonte isotrópica. Ganho maior tende a ampliar a distância no lóbulo principal, mas geralmente reduz a largura de feixe. Para inventariar uma sala, uma zona mais larga pode ser mais útil que a maior distância possível; para um ponto fixo em uma porta, um feixe controlado reduz leituras de áreas adjacentes.
+
+A antena utilizada no protótipo é a Airplux APCA8090. O fabricante informa operação nas frequências centrais de 915~MHz e 866,5~MHz, ganho de 5~dBi, polarização linear, razão axial menor ou igual a 5~dB, impedância de 50~$\Omega$, conector SMA ou customizado, elemento cerâmico de 80~$\times$~80~$\times$~7~mm e placa de 90~$\times$~90~mm \cite{airplux2026apca8090}. A página técnica não apresenta diagrama de irradiação, largura de feixe, relação frente-costas ou VSWR; por isso, esses parâmetros devem ser tratados como pendentes até o envio de documentação adicional pelo fornecedor ou até a caracterização experimental do conjunto.
+
+\subsection{Polarização e orientação}
+
+Antenas lineares concentram o campo em um plano e podem oferecer bom alcance quando a orientação das tags é controlada. Como a antena adotada no protótipo é linear, o ensaio precisa registrar a orientação da AD-239 M730 em relação à APCA8090. Sem esse controle, uma falha de leitura pode ser confundida com limitação de alcance, quando na verdade decorre de desalinhamento de polarização.
+
+Como a APCA8090 é especificada como antena linear, a orientação relativa entre antena do leitor e antena da etiqueta passa a ser uma variável crítica do experimento. A rotação de uma mesma tag em 0, 45 e 90 graus permite observar a dependência angular. Uma queda acentuada em orientação ortogonal é esperada em sistemas lineares, embora a caracterização completa do lóbulo de radiação ainda dependa do diagrama do fabricante ou de instrumentação de RF.
+
+\subsection{Multipercurso e diversidade}
+
+Reflexão em paredes, móveis e estruturas metálicas produz multipercurso. O efeito pode criar nulos dentro da região nominal de cobertura e leituras inesperadas fora dela. Sistemas com antenas espacialmente separadas, diversidade de fase ou variação de frequência podem reduzir esses nulos \cite{sabesan2014diversity}. O YPD-R200 adquirido possui uma única conexão SMA; portanto, múltiplas zonas simultâneas exigem chaveamento externo, mais de um módulo ou outra classe de leitor.
+
+\section{Etiqueta AD-239 M730}
+
+Uma etiqueta completa contém o circuito integrado e uma antena, formando o \textit{inlay}; o conjunto pode ainda receber adesivo, substrato e acabamento de etiqueta. Informar apenas o chip é insuficiente para prever alcance, pois o desempenho prático depende também da antena do inlay, da superfície de instalação e da orientação em relação à antena do leitor \cite{rao2005uhf}.
+
+A AD-239 M730, adotada como única etiqueta de teste deste trabalho, utiliza o chip Impinj M730, opera em UHF entre 860 e 960~MHz, é compatível com ISO/IEC 18000-63 e EPC Class 1 Gen2, possui 128 bits de memória EPC, TID de 96 bits e número serial único de 48 bits embutido no TID \cite{avery2022ad239m730}. Sua antena possui 70~$\times$~14,5~mm e o produto é fornecido em formatos como \textit{dry inlay}, \textit{wet inlay} e etiqueta.
+
+O datasheet classifica a AD-239 M730 como solução para superfícies não metálicas, o que a torna adequada para ensaios em papel, plástico, madeira e objetos sem grande influência condutiva. Por esse motivo, aplicações diretamente sobre metal devem ser tratadas como condição crítica de degradação, e não como uso recomendado da etiqueta.
+
+\begin{table}[htbp]
+    \centering
+    \footnotesize
+    \begin{tabularx}{\textwidth}{p{4.0cm}X}
+        \toprule
+        \textbf{Parâmetro} & \textbf{Especificação da AD-239 M730} \\
+        \midrule
+        Faixa de frequência & UHF 860--960~MHz. \\
+        Circuito integrado & Impinj M730. \\
+        Padrão de operação & ISO/IEC 18000-63 e EPC Class 1 Gen2. \\
+        Memória EPC & 128 bits. \\
+        Memória TID & 96 bits, com número serial único de 48 bits embutido no TID. \\
+        Dimensão da antena do inlay & 70~$\times$~14,5~mm. \\
+        Formatos de fornecimento & \textit{Dry inlay}, \textit{wet inlay} e etiqueta. \\
+        Aplicação indicada & Bens não metálicos ou superfícies de baixa influência condutiva. \\
+        Limitação considerada & Aplicação direta sobre metal pode reduzir ou impedir a leitura, devendo ser avaliada apenas como condição crítica. \\
+        \bottomrule
+    \end{tabularx}
+    \caption[Especificações da AD-239 M730]{Especificações relevantes da etiqueta AD-239 M730 \cite{avery2022ad239m730}.}
+    \label{tab:ad239m730}
+\end{table}
+
+Para bens metálicos, uma etiqueta convencional pode ser dessintonizada pela superfície condutora. Como a AD-239 M730 é especificada para uso não metálico, ela não deve ser apresentada como solução definitiva para computadores, armários, instrumentos com carcaça metálica ou outros bens condutivos. Neste trabalho, o metal entra apenas como condição de ensaio para medir degradação da tag adotada.
+
+\section{Módulo YPD-R200}
+
+O YPD-R200 é um módulo embarcado compatível com ISO 18000-6C/EPC Class 1 Gen2. O datasheet do fabricante informa alimentação entre 3,6 e 5,5~V, UART de até 115200~bit/s, dimensões de 53~$\times$~33~mm e versões com potência máxima de 20 ou 26~dBm \cite{yanpodo2021r200}. A variante de 26~dBm apresenta corrente de pico informada em aproximadamente 380~mA.
+
+Para essa variante, o fabricante apresenta alcance típico de 3~m em espaço aberto com antena cerâmica de 45~$\times$~45~mm. Esse valor é mais defensável que alegações genéricas de 15 ou 20~m encontradas em páginas de terceiros. A APCA8090 possui ganho nominal maior e dimensões superiores às da antena usada no exemplo do datasheet do módulo, mas somente o experimento poderá estabelecer a distância repetível do conjunto YPD-R200--APCA8090--AD-239 M730.
+
+O protocolo serial utiliza quadros delimitados por \texttt{0xAA} e \texttt{0xDD}. Entre eles aparecem tipo, comando, tamanho dos parâmetros, parâmetros e soma de verificação. O comando \texttt{0x22} executa uma consulta de inventário, \texttt{0x27} inicia múltiplas consultas e \texttt{0x28} interrompe essa operação.
+
+O comando \texttt{0xB6} configura a potência \cite{yanpodo2016protocol}. As notificações incluem RSSI, PC, EPC e CRC da tag.
+
+\section{Arquiteturas de aplicação}
+
+\subsection{Inventário portátil}
+
+No cenário principal, leitor, antena, microcontrolador e fonte formam uma unidade transportada pelo operador. A cada ambiente é aberta uma janela de inventário; os EPCs únicos são acumulados e comparados com a relação esperada. A ergonomia do equipamento, a alimentação e a estabilidade da UART são requisitos tão importantes quanto a distância nominal.
+
+O Arduino Uno/Nano permite validar a comunicação, mas sua única UART de hardware é compartilhada com a USB. O uso de \texttt{SoftwareSerial} a 115200~bit/s aumenta o risco de perda de bytes. Para uma versão portátil confiável, Arduino Mega, ESP32 ou outra plataforma com UART adicional em hardware é tecnicamente mais adequada.
+
+\subsection{Pontos fixos de movimentação}
+
+Um leitor fixo pode registrar que uma tag esteve em sua zona de cobertura, criando um evento de passagem. Para transformar esse evento em ``entrada'' ou ``saída'', é necessário distinguir a ordem espacial das observações. Pesquisas de portais RFID empregam duas antenas, arranjos direcionais, sensores auxiliares ou séries temporais de RSSI e fase \cite{wang2022rfaccess}.
+
+Consequentemente, o YPD-R200 com uma única antena pode servir como unidade de detecção, mas não constitui sozinho um controlador de direção. Uma arquitetura futura pode usar duas zonas consecutivas, cada uma com timestamp, e inferir o sentido pela ordem de ativação. Essa extensão também requer tratamento de leituras repetidas e de tags localizadas perto da porta, mas que não a atravessaram.

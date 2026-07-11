@@ -1,0 +1,52 @@
+%
+% Documento: Sistema de navegação
+%
+
+\chapter{Sistema de Navegação}
+%\label{ch:ofdm}
+
+Sistemas de navegação são utilizados como mapeadores de caminho ou trajetos. Um sistema de navegação, de alta precisão, traz confiabilidade na hora de auxiliar a construção de um trajeto a ser seguido.
+Diversas técnicas são utilizadas para este auxilio, por exemplo orientação por estrelas, bússola e, atualmente, GPS. Ao se utilizar mais de um referencial, o sistema de navegação eleva o seu grau de precisão tornando-o mais qualificado para o uso.
+
+\section{Histórico}
+%\label{sec:ofdm_hist}
+
+A necessidade de se orientar em uma determinada região vem desde antes de Cristo, com isto o homem vem desenvolvendo técnicas e instrumentos para se deslocar de um ponto a outro com precisão, ou seja, tendo o conhecimento de sua posição e direção a ser seguida.
+
+Na antiguidade, no Mediterrâneo, os egípcios, fenícios, gregos e romanos utilizaram os conhecimentos dos ventos, reconhecimento dos astros, relevos e inscrições hieroglíficas para desenvolver técnicas para auxiliar a orientação das sua embarcações. Com estes estudos foram criados os pontos cardiais, a rosa dos ventos em graus e as primeiras cartas de navegação aplicando os conceitos de latitude e longitude \cite{selles1994instrumentos}.
+
+Desenvolvida pelos chineses, a bússola surgiu no início da Idade Média com o crescimento entre os povos, iniciando assim a técnica e a ciência de navegar de um ponto a outro.
+Ao fim do século XV, os navegadores Italiano Américo Vespúcio e Cristóvão Colombo, na primeira tentativa de expedição marítima rumo às Índias, levaram consigo almanaque com uma lista de posições e eventos correlacionados aos corpos celestes efetuados em Ferrara, Itália. Após vários dias de navegação, ao observar os alinhamentos da Lua com Marte, Vespúcio calculou a distância que estavam de Ferrara, na Itália, chegando a conclusão de que não estavam no destino pré-definido, Índia, mas em um novo Continente\cite{de2000astronomia}. Este foi o marco do início da Navegação Astronômica, com a criação do Sextante, instrumento utilizado para observar os astros, uma evolução do Astrolábio e do Quadrante\cite{forcca2007evoluccao}.
+
+Com a II Guerra Mundial, veio o surgimento do RADAR, capaz de detectar objetos através da emissão e recepção de ondas de rádio, princípio utilizado, mais tarde, nas navegações via satélite\cite{kouemou2010radar}.
+
+o GPS é um sistema de Navegação por Satélite com uma precisão de 1 metro para uso militar e 15 metros para uso civil, atualmente, é o sistema de navegação mais moderno e de maior precisão e confiabilidade utilizado no mundo\cite{gps}.
+É também, amplamente usado por diversos segmentos como: agricultura, engenharia, competições esportivas, segurança, trânsito e outros.
+
+\section{Concepção Básica}
+
+Um sistema de navegação determina a localização de um ponto em um plano pré-determinado. A localização possui coordenadas onde seus valores variam conforme a configuração do plano a qual é aplicada. Tal valor encontrado é utilizado pelos sistemas como referencial para, assim, poderem, por exemplo, definir uma rota a ser seguida, determinar um ponto de destino, bem como consultar a distância do objeto até o seu ponto alvo.
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.7\linewidth]{./04-figuras/fig5}
+        \caption{\label{fig:5}Exemplo de projeção da coordenada em um plano cartesiano. Fonte: Própria(2019)}
+    \end{figure}
+Como em um plano cartesiano, a latitude e longitude são os seus correspondentes no plano global. Usando satélites de posicionamento global tornou-se possível mapear países, estados, cidades, prédios e etc, no plano global de modo a se ter mais confiança em navegar pelo globo \cite{US6255989B1}.
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.7\linewidth]{./04-figuras/fig6}
+        \caption{\label{fig:6}Exemplo de trajetória traçada em um plano cartesiano. Fonte: Própria(2019)}
+    \end{figure}
+
+\section{Triangularização}
+A traçarmos retas quem ligam um vértice de um triângulo até o ponto mediano do lado oposto a este vértice, o ponto de intersecção destes 3 segmentos é chamado de centro de massa ou baricentro\cite{umteorema}.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.7\linewidth]{./04-figuras/fig7}
+        \caption{\label{fig:7}Baricentro de um triângulo}
+    \end{figure}
+    
+Diversos modelos de posicionamento por referência aplicam este método, devido a sua eficiência e confiabilidade, uma vez que faz-se necessária a aquisição de referência de três pontos distintos dispostos em três locais diferentes do plano gerando uma zona de interseção onde o seu ponto médio corresponde a localização do objeto\cite{Avidan:2000:TTR:336981.336988}.
+
+

@@ -1,0 +1,28 @@
+%
+% Documento: Conclusão
+%
+
+\chapter{Considerações finais}
+\label{cap:conclusao}
+
+O trabalho redefiniu corretamente o problema inicial. NFC atende à interação de proximidade, mas não oferece a dinâmica desejada para conferir vários bens distribuídos em uma sala. RFID UHF passivo é tecnicamente mais coerente com inventário patrimonial, desde que leitor, antena, tag, instalação e aquisição sejam avaliados como um único sistema.
+
+O recorte final do protótipo foi definido em torno do YPD-R200, da antena Airplux APCA8090, da etiqueta AD-239 M730 e do Arduino. A interface UART foi adaptada em código e o parser passou a aceitar EPC de tamanho variável, requisito necessário para a AD-239 M730. A avaliação experimental permitiu observar o comportamento do conjunto em distância, altura, orientação, material de fixação, inventário de sala e detecção de passagem.
+
+Os resultados indicaram desempenho mais consistente em curtas distâncias. A taxa média de leitura permaneceu acima de 90\% até 1,5~m e caiu para 83,6\% em 2~m, mostrando que o alcance útil para inventário deve ser definido por repetibilidade, não por leitura eventual em maior distância. Distâncias acima de 2,5~m apresentaram degradação acentuada na configuração ensaiada.
+
+Também ficou evidente que a orientação da etiqueta e o material de fixação influenciam fortemente a leitura. A polarização linear da antena favoreceu tags alinhadas, enquanto orientações de $45^\circ$ e $90^\circ$ reduziram a taxa de sucesso. A aplicação direta sobre metal foi a condição mais crítica, o que reforça a necessidade de espaçadores, reposicionamento da etiqueta ou uso de modelos próprios para superfícies metálicas em futuras versões.
+
+No inventário de sala, a cobertura média foi de 91,0\%, com três rodadas completas em dez. Esse resultado mostra potencial para uso em inventário portátil, mas também evidencia que o firmware não pode contar leituras brutas como bens identificados. É necessário acumular EPCs únicos por janela, ignorar duplicatas e registrar métricas de cobertura, falsos negativos e leituras externas.
+
+O uso em ponto fixo permanece como possibilidade arquitetural, mas com limite conceitual claro. Um único leitor detecta a presença da tag em uma zona de leitura, porém não determina sozinho se o bem entrou ou saiu. Para controle de direção, seriam necessárias duas zonas sequenciais, duas antenas ou algum mecanismo adicional de inferência temporal.
+
+Assim, o TCC preserva o foco na camada prática de leitura: protótipo, antena, etiqueta, alimentação, comunicação serial e métricas de desempenho. A implementação de um sistema patrimonial completo continua fora do escopo, pois dependeria de uma camada de software e de validações operacionais adicionais.
+
+\section{Limitações do estudo e perspectivas de continuidade}
+
+Os resultados obtidos são válidos para a configuração ensaiada: módulo YPD-R200, antena APCA8090, etiquetas AD-239 M730, ambiente interno e condições de posicionamento descritas na metodologia. Portanto, eles não devem ser generalizados diretamente para qualquer leitor UHF, qualquer antena ou qualquer modelo de etiqueta. A principal contribuição está em caracterizar o comportamento do conjunto adotado e em estabelecer critérios práticos para avaliar sua aplicação em inventário patrimonial.
+
+Entre as limitações do estudo estão o número controlado de tags, a realização dos ensaios em ambiente específico e a ausência de validação operacional em uma rotina patrimonial institucional completa. Também se observou que bens metálicos e variações de orientação podem exigir soluções próprias de fixação da etiqueta, como espaçadores, reposicionamento ou uso de tags projetadas para metal.
+
+Como continuidade natural, a pesquisa pode ser expandida para salas com geometrias diferentes, populações maiores de etiquetas, antenas com outros padrões de irradiação e comparação entre etiquetas comuns e etiquetas próprias para superfícies metálicas. Outra possibilidade é avaliar pontos fixos com duas zonas de leitura para inferir direção de movimentação. A integração com um sistema patrimonial completo também é uma etapa posterior possível, mas depende de requisitos de software, banco de dados e operação institucional que extrapolam o recorte desta monografia.

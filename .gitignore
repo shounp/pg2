@@ -1,0 +1,38 @@
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.brf
+*.fdb_latexmk
+*.fls
+*.idx
+*.ilg
+*.ind
+*.lof
+*.log
+*.lot
+*.nlo
+*.nls
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+*.xdv
+texput.log
+
+# Local generated PDFs kept out by default; source compiles the document.
+main.pdf
+main_revisado.pdf
+
+# Local automation/session files
+.codex/
+.agents/
+texpage_upload/
+texpage_upload.zip
+texpage_cdp_*.py
+
+# OS/editor noise
+Thumbs.db
+Desktop.ini
+.DS_Store
