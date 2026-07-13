@@ -5,7 +5,7 @@
 \chapter{Trabalhos relacionados}
 \label{cap:trabalhos-relacionados}
 
-Este capítulo compara estudos que empregam RFID UHF em inventário, rastreamento de equipamentos e pontos de passagem. O objetivo não é reproduzir arquiteturas completas de software, mas identificar quais aspectos devem ser avaliados no protótipo de leitura.
+Este capítulo compara estudos que empregam RFID UHF em inventário, rastreamento de equipamentos e pontos de passagem. O objetivo não é reproduzir arquiteturas completas de software, mas identificar quais aspectos devem ser representados na análise de cenários e posteriormente avaliados no protótipo físico.
 
 \section{Inventário e rastreamento de ativos}
 
@@ -13,7 +13,7 @@ Este capítulo compara estudos que empregam RFID UHF em inventário, rastreament
 
 \citeonline{ibrahim2018lab} apresentaram uma solução de baixo custo para identificação e rastreamento de equipamentos de laboratório com IoT e RFID UHF. A proximidade com o ambiente educacional torna esse trabalho particularmente relevante. A diferença está no recorte: aqui se busca caracterizar leitor, antena, tags e aquisição serial antes de integrar serviços de rede.
 
-\citeonline{iorga2026} analisaram inventário automático de componentes utilizando RFID UHF. O estudo reforça a adequação da leitura sem linha de visada e da identificação em lote, mas também evidencia que configuração física e procedimento de leitura devem ser ajustados à geometria dos itens e do ambiente.
+\citeonline{iorga2026} avaliaram o emprego de RFID UHF no inventário automático de componentes. O estudo reforça a adequação da leitura sem linha de visada e da identificação em lote, mas também evidencia que configuração física e procedimento de leitura devem ser ajustados à geometria dos itens e do ambiente.
 
 \section{Arquiteturas centralizadas e segurança}
 
@@ -47,4 +47,4 @@ A \autoref{tab:trabalhos-relacionados} sintetiza a relação dos estudos com est
     \label{tab:trabalhos-relacionados}
 \end{table}
 
-O diferencial deste trabalho não é propor uma nova interface aérea nem um sistema patrimonial completo. A contribuição está em adaptar e avaliar criticamente um leitor YPD-R200 de baixo custo com Arduino, considerando alimentação, comunicação serial, antena APCA8090, etiqueta AD-239 M730 e aquisição de uma população de EPCs. Esse recorte preenche a etapa experimental que deve anteceder a implementação de um sistema de inventário ou de portais fixos.
+O diferencial deste trabalho não é propor uma nova interface aérea nem um sistema patrimonial completo. A contribuição está em adaptar o firmware de um leitor YPD-R200 de baixo custo para Arduino e analisar, por simulação exploratória, condições relevantes de antena, etiqueta, material e aquisição de EPCs. Esse recorte estrutura hipóteses e métricas para a etapa experimental futura que deverá anteceder uma implantação de inventário ou de portais fixos.

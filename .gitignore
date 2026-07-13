@@ -31,8 +31,11 @@ main_revisado.pdf
 texpage_upload/
 texpage_upload.zip
 texpage_cdp_*.py
+__pycache__/
+*.py[cod]
 
 # OS/editor noise
 Thumbs.db
 Desktop.ini
 .DS_Store
+~$*.xlsx

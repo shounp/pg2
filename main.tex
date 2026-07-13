@@ -7,6 +7,7 @@
 \usepackage{cmap}
 \usepackage{microtype}
 \usepackage{indentfirst}
+\setlength{\emergencystretch}{2em}
 
 % Figuras, tabelas, equações e algoritmos
 \usepackage{graphicx}
@@ -19,15 +20,15 @@
 \usepackage{multirow}
 \usepackage{array}
 \usepackage{amsfonts,amssymb,amsmath}
-\usepackage[algoruled,portuguese]{algorithm2e}
+\usepackage[algoruled]{algorithm2e}
+\SetKwFor{While}{enquanto}{faça}{fim}
+\SetKwIF{If}{ElseIf}{Else}{se}{então}{senão se}{senão}{fim}
 
 % Recursos textuais e elementos pré/pós-textuais
 \usepackage[normalem]{ulem}
 \usepackage{verbatim}
 \usepackage{url}
 \usepackage{lastpage}
-\usepackage{nomencl}
-\makenomenclature
 
 % Citações e links
 \usepackage[
@@ -57,11 +58,13 @@
     pdftitle={\@title},
     pdfauthor={\@author},
     pdfsubject={\imprimirpreambulo},
-    pdfkeywords={RFID UHF}{inventário patrimonial}{YPD-R200}{etiquetas passivas}{Arduino}
+    pdfkeywords={RFID UHF, inventário patrimonial, YPD-R200, etiquetas passivas, Arduino, simulação de cenários}
 }
 \makeatother
 
 \renewcommand{\algorithmautorefname}{Algoritmo}
+\renewcommand{\algorithmcfname}{Algoritmo}
+\renewcommand{\listalgorithmcfname}{Lista de Algoritmos}
 \providecommand*{\equationautorefname}{Equação}
 \makeindex
 

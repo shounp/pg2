@@ -58,25 +58,29 @@ Algoritmos acadêmicos podem melhorar a escolha de parâmetros ou substituir est
 
 O ganho em dBi expressa a concentração da radiação em determinadas direções em relação a uma fonte isotrópica. Ganho maior tende a ampliar a distância no lóbulo principal, mas geralmente reduz a largura de feixe. Para inventariar uma sala, uma zona mais larga pode ser mais útil que a maior distância possível; para um ponto fixo em uma porta, um feixe controlado reduz leituras de áreas adjacentes.
 
-A antena utilizada no protótipo é a Airplux APCA8090. O fabricante informa operação nas frequências centrais de 915~MHz e 866,5~MHz, ganho de 5~dBi, polarização linear, razão axial menor ou igual a 5~dB, impedância de 50~$\Omega$, conector SMA ou customizado, elemento cerâmico de 80~$\times$~80~$\times$~7~mm e placa de 90~$\times$~90~mm \cite{airplux2026apca8090}. A página técnica não apresenta diagrama de irradiação, largura de feixe, relação frente-costas ou VSWR; por isso, esses parâmetros devem ser tratados como pendentes até o envio de documentação adicional pelo fornecedor ou até a caracterização experimental do conjunto.
+Ganho, polarização e padrão de irradiação são propriedades diferentes. Polarização linear ou circular descreve a trajetória do campo elétrico; padrão direcional ou omnidirecional descreve como a potência é distribuída no espaço. Portanto, ``linear'' não é sinônimo de ``direcional'', assim como ``omnidirecional'' não é o oposto de ``linear''. Uma antena omnidirecional pode, inclusive, possuir polarização linear.
+
+A antena especificada na arquitetura e adotada como referência na simulação é a Airplux APCA8090. O fabricante informa operação nas frequências centrais de 915~MHz e 866,5~MHz, ganho de 5~dBi, polarização linear, razão axial menor ou igual a 5~dB, impedância de 50~$\Omega$, conector SMA ou customizado, elemento cerâmico de 80~$\times$~80~$\times$~7~mm e placa de 90~$\times$~90~mm \cite{airplux2026apca8090}. A página técnica não apresenta diagrama de irradiação, largura de feixe, relação frente-costas ou VSWR; por isso, esses parâmetros devem ser tratados como pendentes até o envio de documentação adicional pelo fornecedor ou até a caracterização física do conjunto.
 
 \subsection{Polarização e orientação}
 
-Antenas lineares concentram o campo em um plano e podem oferecer bom alcance quando a orientação das tags é controlada. Como a antena adotada no protótipo é linear, o ensaio precisa registrar a orientação da AD-239 M730 em relação à APCA8090. Sem esse controle, uma falha de leitura pode ser confundida com limitação de alcance, quando na verdade decorre de desalinhamento de polarização.
+Em uma antena de polarização linear, o vetor de campo elétrico mantém uma orientação predominante. Quando a antena da etiqueta também é linear, o desalinhamento angular entre as polarizações reduz o acoplamento e pode diminuir a probabilidade de leitura. Por isso, a orientação da AD-239 M730 em relação à APCA8090 foi incluída como variável do modelo e deverá ser registrada em uma futura validação física.
 
-Como a APCA8090 é especificada como antena linear, a orientação relativa entre antena do leitor e antena da etiqueta passa a ser uma variável crítica do experimento. A rotação de uma mesma tag em 0, 45 e 90 graus permite observar a dependência angular. Uma queda acentuada em orientação ortogonal é esperada em sistemas lineares, embora a caracterização completa do lóbulo de radiação ainda dependa do diagrama do fabricante ou de instrumentação de RF.
+Como a APCA8090 é especificada como antena de polarização linear, a orientação relativa entre antena do leitor e antena da etiqueta é uma variável crítica. Os cenários de $0^\circ$, $45^\circ$ e $90^\circ$ representam essa dependência esperada. Eles não comprovam o comportamento angular da antena real, cuja caracterização depende do diagrama do fabricante ou de instrumentação de RF.
+
+Quando a orientação das etiquetas não é controlada, uma antena de polarização circular tende a oferecer maior robustez angular \cite{times72022polarization}. Para a varredura portátil, um padrão omnidirecional é uma alternativa promissora porque pode ampliar a cobertura no plano azimutal e reduzir a necessidade de apontamento, sendo potencialmente mais adequado à mobilidade do operador. Essa vantagem permanece hipotética neste trabalho: a base não compara antenas, e o padrão omnidirecional não elimina sozinho a incompatibilidade de polarização. Além disso, a cobertura em torno do leitor pode aumentar multipercurso e leituras externas. A solução futura deve comparar a APCA8090 linear, uma antena circular ou de diversidade de polarização e uma opção omnidirecional; para pontos fixos, o controle espacial de uma antena direcional pode continuar preferível.
 
 \subsection{Multipercurso e diversidade}
 
-Reflexão em paredes, móveis e estruturas metálicas produz multipercurso. O efeito pode criar nulos dentro da região nominal de cobertura e leituras inesperadas fora dela. Sistemas com antenas espacialmente separadas, diversidade de fase ou variação de frequência podem reduzir esses nulos \cite{sabesan2014diversity}. O YPD-R200 adquirido possui uma única conexão SMA; portanto, múltiplas zonas simultâneas exigem chaveamento externo, mais de um módulo ou outra classe de leitor.
+Reflexão em paredes, móveis e estruturas metálicas produz multipercurso. O efeito pode criar nulos dentro da região nominal de cobertura e leituras inesperadas fora dela. Sistemas com antenas espacialmente separadas, diversidade de fase ou variação de frequência podem reduzir esses nulos \cite{sabesan2014diversity}. O YPD-R200 especificado possui uma única conexão SMA; portanto, múltiplas zonas simultâneas exigem chaveamento externo, mais de um módulo ou outra classe de leitor.
 
 \section{Etiqueta AD-239 M730}
 
 Uma etiqueta completa contém o circuito integrado e uma antena, formando o \textit{inlay}; o conjunto pode ainda receber adesivo, substrato e acabamento de etiqueta. Informar apenas o chip é insuficiente para prever alcance, pois o desempenho prático depende também da antena do inlay, da superfície de instalação e da orientação em relação à antena do leitor \cite{rao2005uhf}.
 
-A AD-239 M730, adotada como única etiqueta de teste deste trabalho, utiliza o chip Impinj M730, opera em UHF entre 860 e 960~MHz, é compatível com ISO/IEC 18000-63 e EPC Class 1 Gen2, possui 128 bits de memória EPC, TID de 96 bits e número serial único de 48 bits embutido no TID \cite{avery2022ad239m730}. Sua antena possui 70~$\times$~14,5~mm e o produto é fornecido em formatos como \textit{dry inlay}, \textit{wet inlay} e etiqueta.
+A AD-239 M730, adotada como etiqueta de referência do modelo, utiliza o chip Impinj M730, opera em UHF entre 860 e 960~MHz, é compatível com ISO/IEC 18000-63 e EPC Class 1 Gen2, possui 128 bits de memória EPC, TID de 96 bits e número serial único de 48 bits embutido no TID \cite{avery2022ad239m730}. Sua antena possui 70~$\times$~14,5~mm e o produto é fornecido em formatos como \textit{dry inlay}, \textit{wet inlay} e etiqueta.
 
-O datasheet classifica a AD-239 M730 como solução para superfícies não metálicas, o que a torna adequada para ensaios em papel, plástico, madeira e objetos sem grande influência condutiva. Por esse motivo, aplicações diretamente sobre metal devem ser tratadas como condição crítica de degradação, e não como uso recomendado da etiqueta.
+O datasheet classifica a AD-239 M730 como solução para superfícies não metálicas. Por esse motivo, papel, plástico, madeira e vidro foram usados como condições de referência no modelo, enquanto a aplicação diretamente sobre metal foi parametrizada como condição crítica de degradação, e não como uso recomendado da etiqueta.
 
 \begin{table}[htbp]
     \centering
@@ -100,13 +104,13 @@ O datasheet classifica a AD-239 M730 como solução para superfícies não metá
     \label{tab:ad239m730}
 \end{table}
 
-Para bens metálicos, uma etiqueta convencional pode ser dessintonizada pela superfície condutora. Como a AD-239 M730 é especificada para uso não metálico, ela não deve ser apresentada como solução definitiva para computadores, armários, instrumentos com carcaça metálica ou outros bens condutivos. Neste trabalho, o metal entra apenas como condição de ensaio para medir degradação da tag adotada.
+Para bens metálicos, uma etiqueta convencional pode ser dessintonizada pela superfície condutora. Como a AD-239 M730 é especificada para uso não metálico, ela não deve ser apresentada como solução definitiva para computadores, armários, instrumentos com carcaça metálica ou outros bens condutivos. Neste trabalho, o metal entra apenas como condição simulada de degradação.
 
 \section{Módulo YPD-R200}
 
 O YPD-R200 é um módulo embarcado compatível com ISO 18000-6C/EPC Class 1 Gen2. O datasheet do fabricante informa alimentação entre 3,6 e 5,5~V, UART de até 115200~bit/s, dimensões de 53~$\times$~33~mm e versões com potência máxima de 20 ou 26~dBm \cite{yanpodo2021r200}. A variante de 26~dBm apresenta corrente de pico informada em aproximadamente 380~mA.
 
-Para essa variante, o fabricante apresenta alcance típico de 3~m em espaço aberto com antena cerâmica de 45~$\times$~45~mm. Esse valor é mais defensável que alegações genéricas de 15 ou 20~m encontradas em páginas de terceiros. A APCA8090 possui ganho nominal maior e dimensões superiores às da antena usada no exemplo do datasheet do módulo, mas somente o experimento poderá estabelecer a distância repetível do conjunto YPD-R200--APCA8090--AD-239 M730.
+Para essa variante, o fabricante apresenta alcance típico de 3~m em espaço aberto com antena cerâmica de 45~$\times$~45~mm. Esse valor é mais defensável que alegações genéricas de 15 ou 20~m encontradas em páginas de terceiros. A APCA8090 possui ganho nominal maior e dimensões superiores às da antena usada no exemplo do datasheet, mas a simulação deste trabalho não estabelece o alcance real; isso exige experimento físico controlado.
 
 O protocolo serial utiliza quadros delimitados por \texttt{0xAA} e \texttt{0xDD}. Entre eles aparecem tipo, comando, tamanho dos parâmetros, parâmetros e soma de verificação. O comando \texttt{0x22} executa uma consulta de inventário, \texttt{0x27} inicia múltiplas consultas e \texttt{0x28} interrompe essa operação.
 
