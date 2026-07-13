@@ -2,91 +2,103 @@
 % Documento: Resultados
 %
 
-\chapter{Resultados experimentais}
+\chapter{Resultados da simulação e discussão}
 \label{cap:resultados}
 
-Este capítulo apresenta a análise quantitativa dos ensaios realizados com o protótipo RFID UHF. A montagem avaliada foi composta pelo módulo YPD-R200, antena Airplux APCA8090 de 5~dBi, etiqueta Avery Dennison Smartrac AD-239 M730 e Arduino como unidade de controle e aquisição. Os dados foram organizados na planilha de coleta e processados para obter métricas de alcance, orientação, material de fixação, inventário de sala e detecção de passagem.
+Este capítulo apresenta os resultados da base sintética \nolinkurl{RFID-UHF-SYN-20260712-v2}. Todos os percentuais, RSSIs, EPCs, instantes, duplicatas, rotas e passagens descritos a seguir foram gerados pelo modelo; nenhum deles constitui medição física do YPD-R200, da APCA8090 ou da AD-239 M730.
 
-O objetivo da análise não é demonstrar apenas uma leitura isolada, mas verificar se o conjunto pode apoiar inventário patrimonial em condições controladas. Por isso, as métricas foram organizadas em torno de cinco perguntas: qual a taxa de leitura em função da distância, como a altura relativa entre antena e tag interfere, qual o impacto da orientação da etiqueta, como o material de fixação afeta a leitura e qual a cobertura obtida em uma janela de inventário.
+O objetivo é analisar o comportamento interno dos cenários, verificar as métricas propostas e identificar condições prioritárias para uma campanha real. As tendências foram parametrizadas a partir de mecanismos fisicamente plausíveis, mas a concordância com a literatura ou com datasheets não funciona como validação independente do modelo.
 
-\section{Base de dados analisada}
+\section{Base simulada}
 
-A base analisada corresponde a um cenário interno de laboratório, com antena posicionada a 150~cm de altura, módulo YPD-R200 configurado para potência nominal de 26~dBm, antena APCA8090 de 5~dBi e etiquetas AD-239 M730. As leituras foram registradas por altura da tag, distância em relação à antena, orientação, material de fixação, janelas de inventário em sala e passagem por ponto fixo.
+A configuração de referência considera antena a 150~cm, potência nominal de 26~dBm, APCA8090 de 5~dBi e polarização linear e etiquetas AD-239 M730. A planilha contém 3.600 tentativas virtuais de distância, 1.350 de orientação, 180 de material e 1.200 de passagem, além de 400 registros de eventos e auditoria em dez janelas de inventário. A aba bruta coincide com os agregados, permitindo auditar as tabelas e figuras a partir dos eventos sintéticos.
 
-A taxa de sucesso usada nas tabelas e gráficos foi calculada pela relação entre leituras válidas e tentativas totais. Para inventário, a cobertura foi calculada pela relação entre a quantidade de EPCs distintos detectados e a população conhecida de tags presentes na janela. Esses indicadores permitem avaliar o comportamento do protótipo de forma mais rigorosa do que uma simples confirmação de leitura.
+Os resultados não devem ser interpretados como alcance nominal, taxa de erro ou RSSI esperados no equipamento real. Eles são comparações relativas dentro das premissas da simulação. O código que gerou originalmente os eventos não foi preservado; por isso, a geração integral não é reproduzível do zero, embora a consolidação da planilha seja realizada pelo script versionado.
 
 \input{./05-tabelas/resultados_rfid_gerados}
 
-\section{Alcance em função da distância}
+\section{Distância horizontal e configurações verticais}
 
-A \autoref{tab:resultado-alcance-distancia} sintetiza a queda observada da taxa de leitura com o aumento da distância. Nos dados experimentais, a taxa média permanece acima de 90\% até 1,5~m, cai para 83,6\% em 2~m e passa a degradar com maior intensidade a partir de 2,5~m. Esse comportamento confirma a distinção discutida na fundamentação: o alcance operacional de inventário deve ser definido pela repetibilidade da leitura, e não pela maior distância em que uma tag responde ocasionalmente.
+A \autoref{tab:resultado-alcance-distancia} apresenta taxas simuladas de 96,9\% a 0,5~m, 95,1\% a 1,0~m, 93,1\% a 1,5~m e 90,0\% a 2,0~m. O modelo produz redução para 77,8\% a 2,5~m, 48,0\% a 3,0~m, 23,3\% a 3,5~m e 5,8\% a 4,0~m.
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.82\textwidth]{./04-figuras/resultado_alcance_distancia}
-    \caption{Taxa média experimental de leitura em função da distância entre antena e etiqueta.}
+    \caption{Taxa simulada de leitura em função da distância horizontal.}
     \label{fig:resultado-alcance-distancia}
 \end{figure}
 
-A \autoref{fig:resultado-alcance-distancia} mostra também a variação entre alturas de tag para cada distância. A faixa sombreada indica que duas etiquetas posicionadas à mesma distância horizontal podem apresentar desempenhos diferentes se estiverem em alturas distintas. Esse efeito justifica registrar a altura durante os ensaios e durante o uso prático, especialmente porque o leitor portátil será usado em salas com bens posicionados em mesas, prateleiras, armários e equipamentos de diferentes dimensões.
+A faixa sombreada da \autoref{fig:resultado-alcance-distancia} representa a dispersão entre 15 configurações sintéticas tag--altura. Mesmo a 1,5~m, somente 10 das 15 configurações atingem individualmente o critério interno de 90\%. Isso ilustra por que uma média elevada não implica uniformidade. O limiar é usado apenas para comparar cenários; ele não deriva de requisito institucional nem define desempenho aceitável para inventário real.
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.82\textwidth]{./04-figuras/resultado_alcance_altura_2m}
-    \caption{Taxa experimental de leitura a 2~m para diferentes alturas da etiqueta.}
+    \caption{Taxa simulada a 2~m horizontais nas configurações verticais.}
     \label{fig:resultado-alcance-altura}
 \end{figure}
 
-A \autoref{fig:resultado-alcance-altura} isola a distância de 2~m e evidencia a influência da altura da tag quando a antena está a 150~cm. Essa visualização é útil para o cenário de inventário portátil, pois aproxima o teste de uma situação real: o operador mantém o leitor em determinada altura enquanto os bens estão distribuídos verticalmente no ambiente.
+Na \autoref{fig:resultado-alcance-altura}, altura, identidade sintética da tag e material variam conjuntamente. A figura representa combinações de cenário e não estima um efeito causal exclusivo da altura. Uma futura validação deverá mover a mesma etiqueta e o mesmo suporte, mantendo as demais condições constantes.
 
-\section{Orientação e material de fixação}
+\section{Orientação e material}
 
-A antena APCA8090 possui polarização linear, logo a orientação da etiqueta em relação ao campo irradiado é uma variável crítica. Nos dados experimentais, a orientação alinhada a $0^\circ$ apresenta taxa média de 84,2\%, enquanto $45^\circ$ reduz a taxa média para 54,2\% e $90^\circ$ para 10,9\%. Esse resultado reforça que uma falha de leitura não deve ser atribuída automaticamente à distância: a polarização e o posicionamento físico da tag podem ser determinantes.
+Para representar a polarização linear da configuração de referência, o modelo aplicou penalidades adicionais às orientações desalinhadas. Foram geradas 401 detecções em 450 tentativas a $0^\circ$ (89,1\%), 242 a $45^\circ$ (53,8\%) e 45 a $90^\circ$ (10,0\%). Esses valores ilustram a sensibilidade angular imposta ao cenário; eles não medem a perda de polarização da APCA8090 real.
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.70\textwidth]{./04-figuras/resultado_orientacao}
-    \caption{Influência experimental da orientação da etiqueta na taxa de leitura.}
+    \caption{Taxa simulada nas orientações representadas pelo modelo.}
     \label{fig:resultado-orientacao}
 \end{figure}
 
-O material de fixação também altera a resposta da etiqueta. A \autoref{tab:resultado-material} mostra taxas altas para papelão, madeira e plástico, redução em vidro e forte degradação quando a tag é aplicada diretamente sobre metal. Esse comportamento é especialmente relevante para inventário patrimonial, pois muitos bens institucionais são metálicos ou possuem carcaças metálicas. Para esses casos, a solução prática deve considerar espaçadores, etiquetas específicas para metal ou outro ponto de fixação no bem.
+Na parametrização de materiais, as taxas foram de 100,0\% para papelão, 93,3\% para madeira, 90,0\% para plástico, 80,0\% para vidro, 3,3\% para metal direto e 30,0\% para metal com espaçador de 10~mm. A degradação sobre metal foi inserida porque a AD-239 M730 é especificada para superfícies não metálicas \cite{avery2022ad239m730}. Portanto, a simulação reproduz uma tendência esperada, mas não quantifica experimentalmente a penalidade do metal nem valida o espaçador.
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.82\textwidth]{./04-figuras/resultado_material}
-    \caption{Taxa experimental de leitura para diferentes materiais de fixação.}
+    \caption{Taxas geradas para os materiais de fixação simulados.}
     \label{fig:resultado-material}
 \end{figure}
 
 \section{Inventário de sala}
 
-O ensaio de inventário em sala representa o caso principal do TCC. A métrica mais importante não é o número bruto de leituras, mas a recuperação dos EPCs distintos esperados. Nos dados coletados, dez tags estavam presentes por janela e a cobertura média foi de 91,0\%, com variação de 80,0\% a 100,0\%. Apenas três das dez rodadas atingiram cobertura completa.
+O cenário principal contém dez tags em cada uma das dez janelas. A simulação produziu 91 detecções únicas em 100 oportunidades tag--janela, equivalentes a cobertura média de 91,0\% e omissão de 9,0\%. As coberturas variaram entre 80,0\% e 100,0\%, e apenas três janelas foram completas. As médias das rotas virtuais A, B, C, D e E foram, respectivamente, 90\%, 95\%, 95\%, 80\% e 95\%.
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.82\textwidth]{./04-figuras/resultado_inventario}
-    \caption{Cobertura experimental por rodada de inventário em sala.}
+    \caption{Cobertura por janela no cenário simulado de inventário.}
     \label{fig:resultado-inventario}
 \end{figure}
 
-A \autoref{fig:resultado-inventario} indica por que o tratamento de duplicatas é obrigatório no Arduino. A planilha registrou média de 45,2 leituras duplicadas por janela, apesar de haver apenas dez tags distintas. Portanto, contar quadros recebidos não equivale a contar bens. O firmware deve acumular EPCs únicos dentro da janela de inventário, ignorar repetições e somente então calcular a cobertura do ambiente.
+A base contém 298 duplicatas, média de 29,8 por janela, e duas leituras externas sintéticas. O tempo médio até detectar todas as tags nas três janelas completas foi de 4,9~s. Esses eventos foram incluídos para exercitar a lógica de consolidação e demonstram conceitualmente que contar quadros não equivale a contar bens. Eles não comprovam que o firmware atual produza essas métricas; a versão arquivada ainda precisa implementar a tabela de EPCs únicos e o registro estruturado.
 
-\section{Ponto fixo de passagem}
+\section{Cenário de passagem}
 
-O uso em ponto fixo foi analisado como extensão do leitor portátil. Nos dados coletados, a taxa média de detecção em passagem foi de 91,0\% a 0,5~m, 86,3\% a 1~m, 71,3\% a 1,5~m e 41,3\% a 2~m. Esse resultado indica que um ponto fixo tende a exigir zona de leitura mais curta e controlada do que o inventário portátil.
+Para a velocidade nominal classificada apenas como ``lenta'', as taxas simuladas foram de 94,7\% a 0,5~m, 89,3\% a 1,0~m, 74,7\% a 1,5~m e 43,7\% a 2,0~m. Velocidade, trajetória e exposição temporal não foram representadas por um modelo físico calibrado, de modo que os valores servem apenas para comparação interna.
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.82\textwidth]{./04-figuras/resultado_passagem}
-    \caption{Taxa experimental de detecção de passagem em função da distância lateral.}
+    \caption{Taxa simulada de detecção de passagem por distância lateral.}
     \label{fig:resultado-passagem}
 \end{figure}
 
-Mesmo com detecção da passagem, a arquitetura com apenas uma zona de leitura não determina o sentido do movimento. Para afirmar entrada ou saída, seriam necessárias duas zonas sequenciais, duas antenas, diferença temporal entre leituras ou outro mecanismo de contexto. Por isso, neste TCC, o ponto fixo deve ser tratado como detecção de presença ou passagem, não como controle completo de direção.
+Mesmo no cenário sintético, uma única zona informa apenas que a tag foi observada. Entrada e saída exigem duas zonas, duas antenas ou outro mecanismo temporal e espacial. Portanto, o ponto fixo permanece uma proposta de detecção de presença, não um controle de direção implementado.
 
-\section{Discussão}
+\section{Taxas de não detecção nos cenários}
 
-Os resultados obtidos estabelecem critérios práticos para o uso do protótipo. O primeiro critério é separar distância máxima de alcance operacional: uma leitura eventual a 3~m ou 4~m não caracteriza inventário confiável se a taxa de recuperação for baixa. O segundo é controlar orientação e material, pois essas variáveis causaram perdas relevantes. O terceiro é validar a janela de inventário por EPCs únicos, e não por quantidade de quadros recebidos.
+As taxas complementares ajudam a visualizar a degradação interna do modelo. Para distância, a não detecção foi de 3,1\%, 4,9\%, 6,9\% e 10,0\% entre 0,5 e 2,0~m. Para orientação, foi de 10,9\% a $0^\circ$, 46,2\% a $45^\circ$ e 90,0\% a $90^\circ$. No material, o metal direto apresentou 96,7\% de falhas e o espaçador 70,0\%. Para passagem, as falhas foram de 5,3\%, 10,7\%, 25,3\% e 56,3\% entre 0,5 e 2,0~m.
 
-A partir dos valores coletados, o conjunto avaliado mostrou desempenho mais consistente em curtas distâncias, especialmente até 1,5~m. Em 2~m, a taxa média ainda foi significativa, mas já apresentou queda suficiente para exigir cuidado no uso operacional. Distâncias acima de 2,5~m não devem ser tratadas como alcance confiável de inventário na configuração ensaiada. Para melhorar esse resultado, os pontos mais prováveis de ajuste são alimentação, UART, orientação da antena, potência configurada, espaçadores para objetos metálicos e posicionamento físico das tags.
+Essas taxas não são erros de medição, sensibilidade ou especificidade do leitor. São apenas complementos dos sucessos gerados. A monografia não usa os intervalos $t$ presentes na planilha como incerteza experimental, pois não existem réplicas físicas independentes nem calibração do modelo.
+
+\section{Implicações para a escolha da antena}
+
+A base foi gerada somente para a APCA8090 de polarização linear e não compara padrões de irradiação. Assim, a queda angular simulada não permite concluir empiricamente qual antena é melhor. Para etiquetas em orientações arbitrárias, uma antena circular ou com diversidade de polarização constitui a comparação mais direta \cite{times72022polarization}.
+
+Para a operação portátil, uma antena omnidirecional merece prioridade em estudos futuros porque pode oferecer cobertura azimutal mais ampla e exigir menos apontamento durante a varredura. Ela pode, portanto, ser mais adequada à mobilidade do operador em determinados ambientes. Essa hipótese possui contrapartidas: uma omni não corrige necessariamente a polarização, pode apresentar nulos em outros planos e pode aumentar multipercurso e leituras externas. A alternativa mais promissora deverá equilibrar cobertura azimutal, polarização, ganho, ergonomia e controle espacial. Em pontos fixos, uma antena direcional pode continuar sendo preferível para limitar a zona de leitura.
+
+\section{Síntese da discussão}
+
+Sob as premissas do modelo, a hipótese exploratória apresenta o comportamento esperado: taxas maiores em curta distância, alinhamento e superfícies não metálicas, com degradação por distância, orientação e metal. Isso demonstra coerência interna entre premissas e saídas, não validação do conjunto físico.
+
+O resultado acadêmico da simulação é a identificação das variáveis e métricas que a futura campanha deverá controlar. Uma conclusão sobre desempenho real exigirá logs produzidos pelo firmware, várias tags e remontagens, ordem de execução controlada, potência e região verificadas, RSSI bruto, velocidade medida e comparação física entre antenas.
