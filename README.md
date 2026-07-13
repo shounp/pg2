@@ -29,7 +29,9 @@ O firmware de medição e os comandos prontos estão documentados em
 
 O script `scripts/plotar_diagrama_radiacao_antena.py` gera um gráfico polar a
 partir do modelo `modelo_coleta_diagrama_radiacao.csv`. As instruções e as
-limitações da medição estão em `DIAGRAMA_RADIACAO.md`.
+limitações da medição estão em `DIAGRAMA_RADIACAO.md`. O roteiro de execução em
+bancada, com montagem, comandos, registro e tratamento dos dados, está em
+`GUIA_MEDICAO_DIAGRAMA_RADIACAO.md`.
 
 ```sh
 python scripts/plotar_diagrama_radiacao_antena.py

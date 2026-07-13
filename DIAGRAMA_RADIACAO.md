@@ -1,5 +1,8 @@
 # Diagrama de radiação da antena
 
+O procedimento completo de bancada, otimizado para uma execução rápida, está em
+`GUIA_MEDICAO_DIAGRAMA_RADIACAO.md`.
+
 O ganho nominal de 5 dBi e a polarização linear não são suficientes para
 reconstruir o diagrama da APCA8090. O script apenas plota níveis angulares
 medidos ou gera um exemplo explicitamente ilustrativo.
