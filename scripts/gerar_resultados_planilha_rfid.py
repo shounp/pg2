@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import re
 import sys
+import unicodedata
 from collections import defaultdict
 from math import sqrt
 from pathlib import Path
@@ -29,16 +30,21 @@ FIGURE_DIR = ROOT / "04-figuras"
 TABLE_SOURCE = "Elaborado pelo autor a partir dos dados experimentais (2026)."
 MATERIAL_LABELS = {
     "Papelao": "Papelão",
+    "Plastico": "Plástico",
+    "Madeira": "Madeira",
+    "Vidro": "Vidro",
     "Metal direto": "Metal direto",
     "Metal com espacador": "Metal com espaçador",
 }
 MATERIAL_ALIASES = {
-    "Papelao": "Papelao",
-    "Papelão": "Papelao",
-    "Metal direto": "Metal direto",
-    "Metal com espacador": "Metal com espacador",
-    "Metal com espaçador": "Metal com espacador",
+    "papelao": "Papelao",
+    "plastico": "Plastico",
+    "madeira": "Madeira",
+    "vidro": "Vidro",
+    "metal direto": "Metal direto",
+    "metal com espacador": "Metal com espacador",
 }
+MATERIAL_ORDER = tuple(MATERIAL_LABELS)
 TAG_SUPPORT_LABELS = {
     "TAG1": "TAG1 (papelão)",
     "TAG2": "TAG2 (madeira)",
@@ -112,28 +118,33 @@ def deduplicate_distance_rows(
 def select_official_material_rows(
     rows: list[dict[str, object]],
 ) -> list[dict[str, object]]:
-    """Mantém somente as três condições validadas do ensaio de material."""
+    """Normaliza e valida as seis condições do ensaio de material."""
     selected: list[dict[str, object]] = []
-    ignored: dict[str, int] = defaultdict(int)
+    unknown: dict[str, int] = defaultdict(int)
 
     for row in rows:
-        source_label = str(row["material_suporte"])
-        canonical_label = MATERIAL_ALIASES.get(source_label)
+        source_label = str(row["material_suporte"]).strip()
+        decomposed = unicodedata.normalize("NFKD", source_label)
+        normalized_label = "".join(
+            character
+            for character in decomposed
+            if not unicodedata.combining(character)
+        )
+        normalized_label = " ".join(normalized_label.casefold().split())
+        canonical_label = MATERIAL_ALIASES.get(normalized_label)
         if canonical_label is None:
-            ignored[source_label] += 1
+            unknown[source_label] += 1
             continue
         normalized_row = dict(row)
         normalized_row["material_suporte"] = canonical_label
         selected.append(normalized_row)
 
-    if ignored:
+    if unknown:
         details = ", ".join(
-            f"{label} ({count})" for label, count in sorted(ignored.items())
+            f"{label} ({count})" for label, count in sorted(unknown.items())
         )
-        print(
-            "aviso: condições adicionais de material sem validação "
-            f"independente foram ignoradas: {details}.",
-            file=sys.stderr,
+        raise ValueError(
+            "condições de material sem classificação definida: " + details
         )
 
     present = {str(row["material_suporte"]) for row in selected}
@@ -143,6 +154,55 @@ def select_official_material_rows(
         raise ValueError(
             "faltam condições oficiais no ensaio de material: " + missing_text
         )
+
+    rows_by_material: dict[str, list[dict[str, object]]] = defaultdict(list)
+    for row in selected:
+        rows_by_material[str(row["material_suporte"])].append(row)
+
+    for material in MATERIAL_ORDER:
+        group = rows_by_material[material]
+        attempts = [int(row["tentativa"]) for row in group]
+        if len(group) != 5 or sorted(attempts) != [1, 2, 3, 4, 5]:
+            raise ValueError(
+                f"{MATERIAL_LABELS[material]} deve conter cinco tentativas "
+                "únicas, numeradas de 1 a 5"
+            )
+
+        for row in group:
+            attempt = int(row["tentativa"])
+            detected_raw = row["detectou_0_1"]
+            if detected_raw not in (0, 1):
+                raise ValueError(
+                    f"detecção inválida em {MATERIAL_LABELS[material]}, "
+                    f"tentativa {attempt}: {detected_raw!r}"
+                )
+            detected = int(detected_raw)
+            epc = row["epc_observado"]
+            first_read = row["tempo_primeira_leitura_s"]
+            tag_reads = parse_metric(row["observacoes"], "leituras_tag")
+            rssi = parse_rssi(row["observacoes"])
+
+            if detected == 0 and (
+                epc not in (None, "")
+                or first_read is not None
+                or tag_reads not in (None, 0)
+                or rssi is not None
+            ):
+                raise ValueError(
+                    f"falha contraditória em {MATERIAL_LABELS[material]}, "
+                    f"tentativa {attempt}: há EPC, tempo ou leituras registradas"
+                )
+            if detected == 1 and (
+                epc in (None, "")
+                or first_read is None
+                or tag_reads is None
+                or tag_reads <= 0
+                or rssi is None
+            ):
+                raise ValueError(
+                    f"sucesso incompleto em {MATERIAL_LABELS[material]}, "
+                    f"tentativa {attempt}: faltam EPC, tempo, leituras ou RSSI"
+                )
     return selected
 
 
@@ -415,7 +475,8 @@ def aggregate_distance(rows: list[dict[str, object]]) -> list[dict[str, object]]
         rssi_values = [
             parse_rssi(row["observacoes"])
             for row in group
-            if parse_rssi(row["observacoes"]) is not None
+            if int(row["detectou_0_1"]) == 1
+            and parse_rssi(row["observacoes"]) is not None
         ]
 
         result.append(
@@ -452,7 +513,8 @@ def aggregate_orientation(rows: list[dict[str, object]]) -> list[dict[str, objec
         rssi_values = [
             parse_rssi(row["observacoes"])
             for row in group
-            if parse_rssi(row["observacoes"]) is not None
+            if int(row["detectou_0_1"]) == 1
+            and parse_rssi(row["observacoes"]) is not None
         ]
         result.append(
             {
@@ -492,7 +554,8 @@ def aggregate_material(rows: list[dict[str, object]]) -> list[dict[str, object]]
         rssi_values = [
             parse_rssi(row["observacoes"])
             for row in group
-            if parse_rssi(row["observacoes"]) is not None
+            if int(row["detectou_0_1"]) == 1
+            and parse_rssi(row["observacoes"]) is not None
         ]
         result.append(
             {
@@ -506,11 +569,7 @@ def aggregate_material(rows: list[dict[str, object]]) -> list[dict[str, object]]
             }
         )
 
-    order = {
-        "Papelao": 0,
-        "Metal direto": 1,
-        "Metal com espacador": 2,
-    }
+    order = {material: index for index, material in enumerate(MATERIAL_ORDER)}
     result.sort(key=lambda row: order.get(str(row["material"]), 99))
     return result
 
@@ -678,13 +737,13 @@ def render_table(
 \\newcommand{{\\TabelaMaterial}}{{%
 \\begin{{table}}[htbp]
     \\centering
-    \\caption{{Resultado experimental por material de fixação.}}
+    \\caption{{Resultado experimental por material e condição de fixação.}}
     \\label{{tab:resultado-material}}
     \\small
     \\setlength{{\\tabcolsep}}{{4pt}}
     \\begin{{tabular}}{{lcccc}}
         \\toprule
-        \\textbf{{Material de fixação}} &
+        \\textbf{{\\shortstack{{Material ou condição\\\\de fixação}}}} &
         \\textbf{{\\shortstack{{Detecções\\\\($n/N$)}}}} &
         \\textbf{{\\shortstack{{Taxa de\\\\leitura}}}} &
         \\textbf{{IC 95\\%}} &
@@ -919,20 +978,26 @@ def write_figures(
         float(row["ci95"][1]) - value
         for value, row in zip(material_rates, material)
     ]
-    fig, ax = plt.subplots(figsize=(10, 5.8), constrained_layout=True)
+    plot_labels = [
+        label.replace("Metal direto", "Metal\ndireto").replace(
+            "Metal com espaçador", "Metal com\nespaçador"
+        )
+        for label in materials
+    ]
+    fig, ax = plt.subplots(figsize=(11.5, 5.8), constrained_layout=True)
     ax.bar(
-        materials,
+        plot_labels,
         material_rates,
         yerr=[material_lower, material_upper],
         capsize=5,
         color="#7965a8",
     )
     ax.set(
-        xlabel="Material de fixação",
+        xlabel="Material ou condição de fixação",
         ylabel="Taxa de leitura (%)",
         ylim=(0, 105),
     )
-    ax.tick_params(axis="x", rotation=18)
+    ax.tick_params(axis="x", rotation=10)
     save_figure(fig, "resultado_material.png")
     plt.close(fig)
 

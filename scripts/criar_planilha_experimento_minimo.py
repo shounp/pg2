@@ -90,7 +90,7 @@ def create_readme(workbook: Workbook) -> None:
     style_title(sheet, "PROTOCOLO EXPERIMENTAL MÍNIMO — PREENCHIMENTO OBRIGATÓRIO", 2)
     rows = [
         ("Natureza", "Planilha vazia para coleta física real. Nenhum resultado foi pré-preenchido."),
-        ("Tempo total", "Planejada para aproximadamente 50–70 minutos, incluindo montagem, fotos e conferência."),
+        ("Tempo total", "Planejada para aproximadamente 60 a 80 minutos, incluindo montagem, fotos e conferência."),
         ("Prioridade", "Execute nesta ordem: Configuração/fotos, Alcance, Orientação, Material e Inventário."),
         ("Tentativa", "Uma janela de 3 s. Retire a tag do campo por cerca de 2 s antes de cada nova tentativa."),
         ("Sucesso", "Preencha 1 somente se o EPC esperado aparecer ao menos uma vez durante a janela; caso contrário, 0."),
@@ -101,7 +101,7 @@ def create_readme(workbook: Workbook) -> None:
         ("Tags", "Cadastre cinco tags. TAG1, TAG2 e TAG3 são usadas nos testes controlados; as cinco entram no inventário."),
         ("Alcance", "4 distâncias × 3 tags × 5 tentativas = 60 janelas de 3 s."),
         ("Orientação", "3 ângulos × 3 tags × 5 tentativas = 45 janelas de 3 s, sempre a 1,5 m."),
-        ("Material", "3 suportes × 5 tentativas = 15 janelas de 3 s, usando sempre TAG1."),
+        ("Material", "6 condições × 5 tentativas = 30 janelas de 3 s, usando sempre TAG1."),
         ("Inventário", "5 janelas de 25 s com cinco tags e o mesmo percurso curto."),
         ("Passagem", "Foi retirada do protocolo para reduzir tempo e preservar a qualidade dos quatro ensaios centrais."),
         ("Backup", "Ao terminar, salve uma cópia com data/hora e preserve fotografias e qualquer log serial."),
@@ -129,7 +129,7 @@ def create_day_plan(workbook: Workbook) -> None:
         (1, "10 min", "Montar, conferir GND/fonte, abrir serial, cadastrar 5 EPCs e tirar fotos.", "Leitura de TAG1 confirmada e configuração preenchida."),
         (2, "20 min", "Executar as 60 janelas da aba Alcance, agrupadas por distância.", "Todas as células amarelas de detectou_0_1 preenchidas."),
         (3, "12 min", "Executar as 45 janelas da aba Orientacao em 0°, 45° e 90°.", "Ângulos fotografados ou marcados e resultados preenchidos."),
-        (4, "8 min", "Executar papelão, metal direto e metal com espaçador usando TAG1.", "Cinco tentativas preenchidas em cada suporte."),
+        (4, "15 min", "Executar papelão, plástico, madeira, vidro, metal direto e metal com espaçador usando TAG1.", "Cinco tentativas preenchidas em cada uma das seis condições."),
         (5, "10 min", "Executar cinco janelas de inventário de 25 s com o mesmo percurso.", "EPCs detectados e quantidade registrados em cada janela."),
         (6, "5 min", "Revisar campos vazios, salvar cópia e copiar fotos/logs.", "Arquivo abre novamente e a aba Resumo apresenta taxas."),
     ]
@@ -273,7 +273,14 @@ def create_material(workbook: Workbook) -> None:
     ]
     rows = []
     order = 1
-    for material, spacer in (("Papelao", 0), ("Metal direto", 0), ("Metal com espacador", 10)):
+    for material, spacer in (
+        ("Papelao", 0),
+        ("Plástico", 0),
+        ("Madeira", 0),
+        ("Vidro", 0),
+        ("Metal direto", 0),
+        ("Metal com espacador", 10),
+    ):
         for attempt in range(1, 6):
             rows.append([order, material, spacer, "TAG1", attempt, 1.5, 150, 150, 0, 3, None, None, None, None])
             order += 1
@@ -347,7 +354,14 @@ def create_summary(workbook: Workbook) -> None:
         sheet.cell(row, 6, f'=IF(D{row}>0,E{row}/D{row}*100,"")')
         sheet.cell(row, 7, f'=IF(D{row}=C{row},"COMPLETO","PENDENTE")')
         row += 1
-    for material in ("Papelao", "Metal direto", "Metal com espacador"):
+    for material in (
+        "Papelao",
+        "Plástico",
+        "Madeira",
+        "Vidro",
+        "Metal direto",
+        "Metal com espacador",
+    ):
         sheet.cell(row, 1, "Material")
         sheet.cell(row, 2, material)
         sheet.cell(row, 3, 5)
@@ -405,7 +419,7 @@ def main() -> int:
     required_ranges = {
         "Alcance": ("J", 2, 61),
         "Orientacao": ("J", 2, 46),
-        "Material": ("K", 2, 16),
+        "Material": ("K", 2, 31),
         "Inventario": ("E", 2, 6),
     }
     for sheet_name, (column, first, last) in required_ranges.items():
@@ -414,7 +428,7 @@ def main() -> int:
 
     print(f"Planilha criada: {OUTPUT}")
     print("Resultados pré-preenchidos: 0")
-    print("Carga principal: 60 alcance + 45 orientação + 15 material + 5 inventários")
+    print("Carga principal: 60 alcance + 45 orientação + 30 material + 5 inventários")
     return 0
 
 

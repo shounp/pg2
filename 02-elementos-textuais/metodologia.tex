@@ -71,7 +71,7 @@ No subconjunto com registros individuais, as tags TAG1, TAG2 e TAG3 foram empreg
 
 \subsection{Ensaios de material}
 
-O ensaio de material fixou a distância em 1,5~m e utilizou TAG1 em três condições: papelão, metal direto e metal com espaçador de 10~mm. Cada condição foi repetida 5 vezes. A janela de 3~s foi mantida e o espaçador foi utilizado para verificar se a separação física recuperava a leitura em condição crítica.
+O ensaio de material fixou a distância em 1,5~m, a orientação em 0$^\circ$ e utilizou o mesmo exemplar TAG1 em seis condições: papelão, plástico, madeira, vidro, metal direto e metal com espaçador plástico de 10~mm. Cada condição foi repetida cinco vezes, totalizando 30 tentativas, com janela de observação de 3~s. O espaçador foi utilizado para verificar se a separação física recuperava a leitura na condição metálica crítica.
 
 \subsection{Inventário em sala}
 
@@ -87,7 +87,7 @@ O inventário utilizou cinco tags presentes simultaneamente e cinco rodadas de o
         \textbf{Cenário} & \textbf{Fatores e níveis} & \textbf{Repetições} & \textbf{Saída analisada} \\
         \midrule
         Distância e orientação & 0,5 a 5,0~m e 0$^\circ$, 45$^\circ$ e 90$^\circ$, conforme as combinações executadas & 15 a 45 por combinação & Detecções, taxa de leitura e IC 95\% de Wilson; tempo e RSSI apenas no subconjunto com registros individuais. \\
-        Material & Papelão, metal direto e metal com espaçador de 10~mm & 5 por condição & Taxa de leitura e RSSI bruto. \\
+        Material e fixação & Papelão, plástico, madeira, vidro, metal direto e metal com espaçador plástico de 10~mm & 5 por condição & Taxa de leitura e RSSI bruto. \\
         Inventário & Cinco tags em sala, janela de 25~s & 5 rodadas & EPCs distintos, cobertura, omissões e duplicatas. \\
         \bottomrule
     \end{tabularx}
@@ -144,7 +144,7 @@ Os indicadores foram calculados a partir dos dados coletados durante os ensaios.
 
 \section{Validade prática e limitações}
 
-A principal limitação é o tamanho da amostra e a realização dos ensaios em uma única sala. A escolha de um laboratório institucional de uso cotidiano, com ocupação e objetos metálicos próximos, fortalece a validade prática da avaliação: essas condições são compatíveis com ambientes nos quais ocorre a conferência patrimonial e integram o funcionamento esperado, não sendo tratadas como erros experimentais. Como os elementos do ambiente não foram posicionados e variados independentemente, os resultados expressam o desempenho conjunto no cenário observado, sem permitir quantificar separadamente as contribuições do multipercurso e da movimentação de pessoas. Nos ensaios de distância e orientação, a identidade da etiqueta e o material de suporte permaneceram associados, o que também impede atribuir diferenças entre TAG1, TAG2 e TAG3 apenas ao exemplar. Parte dessas medições foi preservada apenas como contagens agregadas, sem RSSI, tempo individual, ordem das tentativas ou diagnóstico serial por tentativa. Também não houve instrumentação de RF para calibrar o RSSI ou caracterizar o canal.
+A principal limitação é o tamanho da amostra e a realização dos ensaios em uma única sala. A escolha de um laboratório institucional de uso cotidiano, com ocupação e objetos metálicos próximos, fortalece a validade prática da avaliação: essas condições são compatíveis com ambientes nos quais ocorre a conferência patrimonial e integram o funcionamento esperado, não sendo tratadas como erros experimentais. Como os elementos do ambiente não foram posicionados e variados independentemente, os resultados expressam o desempenho conjunto no cenário observado, sem permitir quantificar separadamente as contribuições do multipercurso e da movimentação de pessoas. Nos ensaios de distância e orientação, a identidade da etiqueta e o material de suporte permaneceram associados, o que também impede atribuir diferenças entre TAG1, TAG2 e TAG3 apenas ao exemplar. O ensaio de material reutilizou um único exemplar nas seis condições; portanto, permite comparar descritivamente as montagens observadas, mas não estimar a variabilidade entre etiquetas nem estabelecer uma hierarquia geral entre materiais. Parte das medições de distância e orientação foi preservada apenas como contagens agregadas, sem RSSI, tempo individual, ordem das tentativas ou diagnóstico serial por tentativa. Também não houve instrumentação de RF para calibrar o RSSI ou caracterizar o canal.
 
 A montagem elétrica e a configuração de RF também possuem lacunas de rastreabilidade. O emprego do adequador de nível entre D11 e RXD não ficou confirmado de modo inequívoco, e região, canal, salto de frequência e potência efetiva não foram verificados por leitura posterior ou instrumentação. Além disso, quadros inválidos e \textit{timeouts} foram observados com \texttt{SoftwareSerial} a 115200~bit/s, mas não houve analisador lógico para separar perda serial de ausência de resposta no enlace de RF.
 

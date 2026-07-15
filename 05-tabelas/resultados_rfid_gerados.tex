@@ -52,21 +52,24 @@
 \newcommand{\TabelaMaterial}{%
 \begin{table}[htbp]
     \centering
-    \caption{Resultado experimental por material de fixação.}
+    \caption{Resultado experimental por material e condição de fixação.}
     \label{tab:resultado-material}
     \small
     \setlength{\tabcolsep}{4pt}
     \begin{tabular}{lcccc}
         \toprule
-        \textbf{Material de fixação} &
+        \textbf{\shortstack{Material ou condição\\de fixação}} &
         \textbf{\shortstack{Detecções\\($n/N$)}} &
         \textbf{\shortstack{Taxa de\\leitura}} &
         \textbf{IC 95\%} &
         \textbf{\shortstack{RSSI bruto\\média $\pm$ DP}} \\
         \midrule
         Papelão & 5/5 & 100,0\% & 56,6\% a 100,0\% & 183,0 $\pm$ 4,5 \\
+        Plástico & 5/5 & 100,0\% & 56,6\% a 100,0\% & 180,6 $\pm$ 0,9 \\
+        Madeira & 5/5 & 100,0\% & 56,6\% a 100,0\% & 174,4 $\pm$ 6,8 \\
+        Vidro & 3/5 & 60,0\% & 23,1\% a 88,2\% & 181,7 $\pm$ 7,1 \\
         Metal direto & 0/5 & 0,0\% & 0,0\% a 43,4\% & Sem leitura \\
-        Metal com espaçador & 5/5 & 100,0\% & 56,6\% a 100,0\% & 182,6 $\pm$ 4,2 \\
+        Metal com espaçador & 5/5 & 100,0\% & 56,6\% a 100,0\% & 180,6 $\pm$ 5,9 \\
         \bottomrule
     \end{tabular}
     \fonte{Elaborado pelo autor a partir dos dados experimentais (2026).}

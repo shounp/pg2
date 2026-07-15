@@ -61,25 +61,25 @@ A \autoref{tab:resultado-por-tag} apresenta o subconjunto com registros individu
 
 \FloatBarrier
 
-\section{Material de fixação}
+\section{Material e condição de fixação}
 
-Na \autoref{tab:resultado-material}, papelão e metal com espaçador plástico de 10~mm apresentaram 100,0\% de leitura, enquanto o metal direto resultou em 0,0\%. Como houve apenas cinco tentativas e um único exemplar de tag por condição, os intervalos de 95\% ainda são amplos: de 56,6\% a 100,0\% nos dois casos de sucesso integral e de 0,0\% a 43,4\% no metal direto.
+Na \autoref{tab:resultado-material}, papelão, plástico, madeira e metal com espaçador plástico de 10~mm apresentaram 5/5 detecções, correspondentes a 100,0\%. No vidro foram registradas 3/5 detecções, ou 60,0\%, enquanto o metal direto resultou em 0/5. Como houve apenas cinco tentativas e um único exemplar de tag por condição, os intervalos de 95\% ainda são amplos: de 56,6\% a 100,0\% nas quatro condições com sucesso integral, de 23,1\% a 88,2\% no vidro e de 0,0\% a 43,4\% no metal direto.
 
 \TabelaMaterial
 
-A \autoref{fig:resultado-material} destaca o contraste entre o contato metálico direto e as duas condições nas quais houve detecção.
+A \autoref{fig:resultado-material} compara as seis condições e destaca o contraste entre a aplicação diretamente sobre metal e as demais montagens avaliadas.
 
 \begin{figure}[htbp]
     \centering
-    \caption{Taxa experimental de leitura para os materiais de fixação testados; as barras de erro representam o IC 95\% de Wilson.}
+    \caption{Taxa experimental de leitura para os materiais e as condições de fixação testados; as barras de erro representam o IC 95\% de Wilson.}
     \label{fig:resultado-material}
-    \includegraphics[width=0.82\textwidth]{./04-figuras/resultado_material}
+    \includegraphics[width=\textwidth]{./04-figuras/resultado_material}
     \fonte{Elaborado pelo autor a partir dos dados experimentais (2026).}
 \end{figure}
 
 \FloatBarrier
 
-O espaçador de 10~mm recuperou a leitura nas cinco tentativas realizadas, fornecendo evidência favorável à separação física nessa montagem. O resultado não permite definir 10~mm como espessura ótima nem substituir a validação com etiquetas próprias para metal. Para a prática patrimonial, ele indica que bens metálicos exigem etiqueta adequada ou suporte auxiliar previamente testado.
+As leituras sobre papelão, plástico e madeira mostram que a etiqueta permaneceu funcional nas cinco tentativas de cada uma dessas montagens não metálicas. No vidro ocorreram duas omissões, mas o número reduzido de repetições e o uso de um único exemplar não permitem estabelecer uma hierarquia geral entre os quatro materiais. O contraste mais forte ocorreu no metal: o contato direto impediu a detecção, enquanto o espaçador de 10~mm recuperou a leitura nas cinco tentativas. Esse resultado não define 10~mm como espessura ótima nem substitui a validação com etiquetas próprias para metal.
 
 \section{Inventário em sala}
 
@@ -108,7 +108,7 @@ As cinco etiquetas formavam a etapa inicial de uma progressão planejada até ap
 
 Após as medições, verificou-se que a alternância entre a fonte externa de 5~V/1~A e a alimentação pela conexão USB do Arduino não produziu alteração relevante nos resultados obtidos.
 
-Os registros diagnósticos coletados permitem avaliar a aquisição sem atribuir automaticamente toda falha à interface de RF. Nas 693 consultas das medições de distância, orientação e material que possuem diagnóstico serial individual, ocorreram 21 quadros inválidos (3,0\%), 9 \textit{timeouts} (1,3\%) e nenhum erro de comando. As combinações preservadas apenas como contagens agregadas não integram esses totais. No inventário, foram 251 consultas, 5 quadros inválidos (2,0\%), 2 \textit{timeouts} (0,8\%) e nenhum estouro da tabela de EPCs. Esses percentuais são diagnósticos do programa, e não uma taxa de erro de enquadramento da UART: sem analisador lógico, não é possível distinguir completamente corrupção em \texttt{SoftwareSerial}, resposta malformada do módulo e efeitos do enlace entre leitor e tag.
+Os registros diagnósticos coletados permitem avaliar a aquisição sem atribuir automaticamente toda falha à interface de RF. Nas 787 consultas das medições de distância, orientação e material que possuem diagnóstico serial individual, ocorreram 23 quadros inválidos (2,9\%), 9 \textit{timeouts} (1,1\%) e nenhum erro de comando. As combinações preservadas apenas como contagens agregadas não integram esses totais. No inventário, foram 251 consultas, 5 quadros inválidos (2,0\%), 2 \textit{timeouts} (0,8\%) e nenhum estouro da tabela de EPCs. Esses percentuais são diagnósticos do programa, e não uma taxa de erro de enquadramento da UART: sem analisador lógico, não é possível distinguir completamente corrupção em \texttt{SoftwareSerial}, resposta malformada do módulo e efeitos do enlace entre leitor e tag.
 
 \section{Síntese da discussão}
 
