@@ -13,15 +13,15 @@ O objetivo é discutir o comportamento observado do conjunto formado por YPD-R20
 
 \section{Distância horizontal}
 
-A \autoref{tab:resultado-alcance-distancia} mostra que a taxa de leitura foi de 100,0\% a 0,5~m, 73,3\% a 1,0~m, 66,7\% a 1,5~m e 53,3\% a 2,0~m. Os respectivos intervalos de confiança de 95\% foram de 79,6\% a 100,0\%, de 48,0\% a 89,1\%, de 41,7\% a 84,8\% e de 30,1\% a 75,2\%. A tendência observada é de queda com a distância, mas a amplitude dos intervalos evidencia a incerteza decorrente das 15 tentativas por condição.
+A \autoref{tab:resultado-alcance-distancia} reúne todas as observações disponíveis em cada distância. As taxas marginais foram de 100,0\% a 0,5~m, 81,0\% a 1,0~m, 78,3\% a 1,5~m, 63,8\% a 2,0~m e 0,0\% a 5,0~m. Os respectivos intervalos de confiança de 95\% foram de 79,6\% a 100,0\%, de 72,4\% a 87,3\%, de 66,4\% a 86,9\%, de 54,3\% a 72,4\% e de 0,0\% a 4,1\%. Esses valores sintetizam a campanha, mas não isolam o efeito da distância, pois a distribuição de ângulos, etiquetas e repetições não foi idêntica em todos os níveis.
 
 \TabelaAlcanceDistancia
 
-A \autoref{fig:resultado-alcance-distancia} representa graficamente as taxas e os intervalos da \autoref{tab:resultado-alcance-distancia} nos quatro níveis efetivamente ensaiados.
+A \autoref{fig:resultado-alcance-distancia} preserva a orientação como segunda dimensão, evitando que o marginal seja interpretado como comparação causal direta.
 
 \begin{figure}[htbp]
     \centering
-    \caption{Taxa experimental de leitura em função da distância horizontal; as barras de erro representam o IC 95\% de Wilson.}
+    \caption{Taxa experimental de leitura em função da distância e da orientação; as barras de erro representam o IC 95\% de Wilson.}
     \label{fig:resultado-alcance-distancia}
     \includegraphics[width=0.82\textwidth]{./04-figuras/resultado_alcance_distancia}
     \fonte{Elaborado pelo autor a partir dos dados experimentais (2026).}
@@ -29,43 +29,35 @@ A \autoref{fig:resultado-alcance-distancia} representa graficamente as taxas e o
 
 \FloatBarrier
 
-Adotando 90\% como limiar diagnóstico de repetibilidade por condição, apenas o ponto de 0,5~m atingiu o critério nesta campanha. Como a próxima distância ensaiada foi 1,0~m, os dados não permitem localizar com precisão o limite entre esses dois pontos. Esse limiar não constitui aceitação operacional para o inventário, pois detectar 90\% das tentativas ou dos bens ainda deixa omissões. Para uma passagem pela sala, o requisito adotado é identificar todos os EPCs esperados na mesma rodada.
+Nas séries estratificadas, o alinhamento de 0$^\circ$ apresentou 100,0\% a 0,5~m, 91,1\% a 1,0~m, 80,0\% a 1,5~m e 77,8\% a 2,0~m. Em 45$^\circ$ e 90$^\circ$, as taxas foram inferiores ou iguais às observadas no alinhamento de referência na maioria dos pontos, embora a variação amostral produza diferenças locais. A 5,0~m não houve detecção em nenhuma das três orientações. Assim, a campanha indica redução do desempenho com distância e desalinhamento, mas não define um único alcance independente da geometria.
 
-Na \autoref{tab:resultado-alcance-distancia}, o tempo médio até a primeira leitura, calculado somente entre tentativas com detecção, cresce com a distância: $0{,}020 \pm 0{,}003$~s a 0,5~m, $0{,}206 \pm 0{,}338$~s a 1,0~m, $0{,}596 \pm 0{,}726$~s a 1,5~m e $0{,}773 \pm 0{,}846$~s a 2,0~m. A dispersão elevada nos três últimos pontos mostra que a média temporal deve ser interpretada com cautela; tentativas sem detecção não entram nesse cálculo e já são representadas pela taxa de sucesso. As médias de RSSI bruto também não variaram de forma monotônica com a distância. Como o RSSI não foi calibrado e o multipercurso integrou o cenário realista sem ser medido separadamente, esses valores descrevem apenas o comportamento relativo observado; eles não podem ser convertidos para potência em dBm nem utilizados para isolar causalmente os mecanismos de propagação. Além disso, TAG1, TAG2 e TAG3 permaneceram associadas, respectivamente, a papelão, madeira e plástico. Como os mesmos três conjuntos foram usados em todas as distâncias, a comparação agregada entre distâncias conserva a composição do painel, mas uma diferença individual não pode ser atribuída somente à etiqueta.
+Adotando 90\% como limiar diagnóstico de repetibilidade por condição, apenas 0,5~m no marginal e a célula de 1,0~m com alinhamento de 0$^\circ$ atingiram o critério. Esse limiar não constitui aceitação operacional para o inventário, pois detectar 90\% das tentativas ou dos bens ainda deixa omissões. Para uma passagem pela sala, o requisito adotado é identificar todos os EPCs esperados na mesma rodada.
+
+No subconjunto com registros individuais, o tempo médio até a primeira leitura, calculado somente entre tentativas com detecção, foi de $0{,}020 \pm 0{,}003$~s a 0,5~m, $0{,}206 \pm 0{,}338$~s a 1,0~m, $0{,}596 \pm 0{,}726$~s a 1,5~m e $0{,}773 \pm 0{,}846$~s a 2,0~m. A dispersão elevada nos três últimos pontos exige cautela, e as médias de RSSI bruto não variaram de forma monotônica. Como o RSSI não foi calibrado e o multipercurso integrou o cenário realista sem ser medido separadamente, esses valores não podem ser convertidos para dBm nem utilizados para isolar mecanismos de propagação. Além disso, TAG1, TAG2 e TAG3 permaneceram associadas, respectivamente, a papelão, madeira e plástico, de modo que diferenças individuais não podem ser atribuídas somente à etiqueta.
 
 \section{Orientação}
 
-A \autoref{tab:resultado-orientacao} mostra que o conjunto obteve 93,3\% de leitura em 0$^\circ$, 86,7\% em 45$^\circ$ e 66,7\% em 90$^\circ$, sempre a 1,5~m. Os intervalos de confiança de 95\% foram, respectivamente, de 70,2\% a 98,8\%, de 62,1\% a 96,3\% e de 41,7\% a 84,8\%. A tendência monotônica é compatível com a perda de acoplamento por desalinhamento entre polarizações lineares. Em um cenário institucional fechado, o multipercurso faz parte das condições normais de operação. Como os intervalos se sobrepõem e esse efeito não foi medido separadamente, os dados não permitem atribuir toda a diferença exclusivamente ao ângulo. Os três conjuntos formados por etiqueta e suporte aparecem em todos os ângulos, mas a associação fixa entre exemplar e suporte permanece como fator de confusão na análise individual.
+A \autoref{tab:resultado-orientacao} apresenta os marginais descritivos de todas as distâncias: 69,7\% em 0$^\circ$, 57,1\% em 45$^\circ$ e 37,1\% em 90$^\circ$. Os intervalos de confiança de 95\% foram, respectivamente, de 62,3\% a 76,2\%, de 47,6\% a 66,2\% e de 28,5\% a 46,7\%. A redução é compatível com a perda de acoplamento por desalinhamento entre polarizações lineares. Entretanto, o marginal inclui quantidades diferentes de observações por distância e o efeito de piso a 5,0~m; por isso, a interpretação principal permanece nas séries estratificadas.
 
 \TabelaOrientacao
 
-A \autoref{fig:resultado-orientacao} permite comparar visualmente a tendência entre os três ângulos, preservando a amplitude dos intervalos de confiança.
+A \autoref{fig:resultado-orientacao} reorganiza as mesmas células por orientação e mantém cada distância como uma série. A variação angular aparece em 1,0, 1,5 e 2,0~m, com a taxa de 90$^\circ$ inferior à de 0$^\circ$ nessas três distâncias, enquanto a série de 5,0~m permanece em 0,0\%. Em um cenário institucional fechado, o multipercurso integra as condições normais de operação. Como os intervalos se sobrepõem em parte e exemplar, suporte e distância não foram controlados em um único modelo, os dados não permitem atribuir toda a variação exclusivamente ao ângulo.
 
 \begin{figure}[htbp]
     \centering
-    \caption{Taxa experimental de leitura nas orientações testadas a 1,5~m; as barras de erro representam o IC 95\% de Wilson.}
+    \caption{Taxa experimental de leitura por orientação, com séries separadas por distância; as barras de erro representam o IC 95\% de Wilson.}
     \label{fig:resultado-orientacao}
-    \includegraphics[width=0.70\textwidth]{./04-figuras/resultado_orientacao}
+    \includegraphics[width=0.82\textwidth]{./04-figuras/resultado_orientacao}
     \fonte{Elaborado pelo autor a partir dos dados experimentais (2026).}
 \end{figure}
 
-A análise complementar por conjunto formado por etiqueta e suporte é apresentada na \autoref{tab:resultado-por-tag}.
+A análise do subconjunto com identificação individual do conjunto formado por etiqueta e suporte é apresentada na \autoref{tab:resultado-por-tag}.
 
 \TabelaPorEtiqueta
 
 \FloatBarrier
 
-A \autoref{tab:resultado-por-tag} apresenta uma verificação complementar por conjunto. No ensaio de distância, TAG1 com papelão, TAG2 com madeira e TAG3 com plástico obtiveram, respectivamente, 75,0\%, 85,0\% e 60,0\%; no ensaio de orientação, as taxas foram 86,7\%, 86,7\% e 73,3\%. Essa variação descreve os conjuntos efetivamente usados, mas não permite concluir que uma etiqueta, madeira ou plástico foi responsável pela diferença, pois exemplar e suporte não foram variados independentemente.
-
-\section{Ensaio complementar com uma etiqueta isolada}
-
-A \autoref{tab:resultado-ensaio-uma-tag} reúne o ensaio complementar com uma única etiqueta na zona de leitura. Em 1,0~m, as taxas foram 100,0\%, 86,7\% e 60,0\% para 0$^\circ$, 45$^\circ$ e 90$^\circ$. Em 2,0~m, os valores caíram para 90,0\%, 70,0\% e 36,7\%. Em 5,0~m, não houve detecção nas 30 tentativas de cada orientação. Os intervalos de Wilson permanecem apresentados porque, mesmo com 30 tentativas por combinação, as proporções não constituem valores exatos da população.
-
-\TabelaEnsaioUmaTag
-
-O bloco complementar evidencia uma interação prática entre distância e orientação: o alinhamento de 0$^\circ$ preservou desempenho elevado em 1,0 e 2,0~m, enquanto o desalinhamento reduziu a repetibilidade, e 5,0~m ficou fora do alcance útil nas condições observadas. Como essas falhas ocorreram com apenas uma etiqueta respondendo, colisões entre tags não são necessárias para explicar parte das omissões. O multipercurso, o limiar de energização da tag, a polarização, a aquisição serial e outras fontes de variabilidade ainda podem atuar. O ensaio não quantifica a contribuição de colisões no inventário; isso exigiria comparar, na mesma geometria e sob o mesmo protocolo, cada etiqueta isolada e as mesmas etiquetas presentes simultaneamente.
-
-Os registros desse bloco foram preservados apenas como contagens consolidadas. Eles não contêm RSSI, tempos individuais, ordem das tentativas ou diagnósticos seriais suficientes para combinação com os demais ensaios. Por essa razão, a matriz complementa a interpretação de distância e orientação, mas não altera as estatísticas das tabelas anteriores.
+A \autoref{tab:resultado-por-tag} apresenta o subconjunto com registros individuais. No ensaio de distância, TAG1 com papelão, TAG2 com madeira e TAG3 com plástico obtiveram, respectivamente, 75,0\%, 85,0\% e 60,0\%; no ensaio de orientação, as taxas foram 86,7\%, 86,7\% e 73,3\%. Essa variação descreve os conjuntos efetivamente usados, mas não permite concluir que uma etiqueta, madeira ou plástico foi responsável pela diferença, pois exemplar e suporte não foram variados independentemente.
 
 \FloatBarrier
 
@@ -116,11 +108,11 @@ As cinco etiquetas formavam a etapa inicial de uma progressão planejada até ap
 
 Após as medições, verificou-se que a alternância entre a fonte externa de 5~V/1~A e a alimentação pela conexão USB do Arduino não produziu alteração relevante nos resultados obtidos.
 
-Os registros diagnósticos coletados permitem avaliar a aquisição sem atribuir automaticamente toda falha à interface de RF. Nas 693 consultas dos ensaios principais de distância, orientação e material, ocorreram 21 quadros inválidos (3,0\%), 9 \textit{timeouts} (1,3\%) e nenhum erro de comando. No inventário, foram 251 consultas, 5 quadros inválidos (2,0\%), 2 \textit{timeouts} (0,8\%) e nenhum estouro da tabela de EPCs. O ensaio complementar de uma etiqueta não integra essas contagens, pois seus registros foram preservados apenas de forma agregada. Esses percentuais são diagnósticos do programa, e não uma taxa de erro de enquadramento da UART: sem analisador lógico, não é possível distinguir completamente corrupção em \texttt{SoftwareSerial}, resposta malformada do módulo e efeitos do enlace entre leitor e tag.
+Os registros diagnósticos coletados permitem avaliar a aquisição sem atribuir automaticamente toda falha à interface de RF. Nas 693 consultas das medições de distância, orientação e material que possuem diagnóstico serial individual, ocorreram 21 quadros inválidos (3,0\%), 9 \textit{timeouts} (1,3\%) e nenhum erro de comando. As combinações preservadas apenas como contagens agregadas não integram esses totais. No inventário, foram 251 consultas, 5 quadros inválidos (2,0\%), 2 \textit{timeouts} (0,8\%) e nenhum estouro da tabela de EPCs. Esses percentuais são diagnósticos do programa, e não uma taxa de erro de enquadramento da UART: sem analisador lógico, não é possível distinguir completamente corrupção em \texttt{SoftwareSerial}, resposta malformada do módulo e efeitos do enlace entre leitor e tag.
 
 \section{Síntese da discussão}
 
-Os resultados sustentam as três tendências principais da hipótese: a repetibilidade caiu com a distância, o contato direto com metal impediu a detecção da etiqueta convencional e a taxa diminuiu com o aumento do desalinhamento angular. O ensaio de etiqueta isolada mostra que existem falhas sem disputa simultânea entre tags, de modo que colisão não pode ser tratada como explicação exclusiva para o inventário incompleto. A campanha não separou estatisticamente polarização, multipercurso, suporte, exemplar, serial e anticolisão. Os dados também mostram que o inventário com cinco tags não fechou nenhuma janela, reforçando a necessidade de acumular EPCs únicos, registrar omissões e melhorar a configuração física antes de aumentar a escala.
+Os resultados sustentam as três tendências principais da hipótese: a repetibilidade caiu com a distância, o contato direto com metal impediu a detecção da etiqueta convencional e a taxa diminuiu com o aumento do desalinhamento angular. A campanha não separou estatisticamente polarização, multipercurso, suporte, exemplar, aquisição serial e anticolisão; portanto, as omissões não podem ser atribuídas exclusivamente a um desses mecanismos. Os dados também mostram que o inventário com cinco tags não fechou nenhuma janela, reforçando a necessidade de acumular EPCs únicos, registrar omissões e melhorar a configuração física antes de aumentar a escala.
 
 Em termos de escolha de antena, a APCA8090 linear permitiu estabelecer uma linha de base experimental de baixo custo, mas a configuração não atingiu o requisito operacional. Para tratar diretamente a sensibilidade à orientação, a comparação futura prioritária é com polarização circular ou diversidade de polarização. Uma antena omnidirecional constitui hipótese separada para ampliar a cobertura azimutal e reduzir o esforço de apontamento; ela não corrige por si só o desalinhamento de polarização e pode elevar leituras externas e multipercurso. Bens metálicos também exigem comparar o espaçador com etiquetas próprias para metal.
 

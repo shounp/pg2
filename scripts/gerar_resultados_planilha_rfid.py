@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Consolida a planilha experimental do protótipo RFID UHF.
 
-O script lê os registros individuais da campanha principal, incorpora as
-contagens agregadas fornecidas para o ensaio complementar com uma etiqueta,
-recalcula taxas e gera tabelas e figuras para a monografia. Os valores de RSSI
-usados nas estatísticas são os bytes brutos anotados nas observações; eles não
-são convertidos para dBm, pois a campanha não forneceu calibração para isso.
+O script integra as medições de distância e orientação no nível de registro
+realmente preservado: tentativas individuais nas abas originais e contagens
+por combinação na aba Distancia_Orientacao. As condições são consolidadas por
+célula de distância e ângulo, sem fabricar registros individuais para contagens
+agregadas. Os valores de RSSI permanecem restritos ao subconjunto que possui
+diagnóstico serial e não são convertidos para dBm.
 """
 
 from __future__ import annotations
@@ -43,18 +44,6 @@ TAG_SUPPORT_LABELS = {
     "TAG2": "TAG2 (madeira)",
     "TAG3": "TAG3 (plástico)",
 }
-COMPLEMENTARY_SINGLE_TAG_RESULTS = (
-    # distância (m), orientação (graus), detecções, tentativas
-    (1.0, 0, 30, 30),
-    (1.0, 45, 26, 30),
-    (1.0, 90, 18, 30),
-    (2.0, 0, 27, 30),
-    (2.0, 45, 21, 30),
-    (2.0, 90, 11, 30),
-    (5.0, 0, 0, 30),
-    (5.0, 45, 0, 30),
-    (5.0, 90, 0, 30),
-)
 
 
 def rows_as_dicts(workbook, sheet_name: str) -> list[dict[str, object]]:
@@ -238,6 +227,167 @@ def mean_ci95(values: list[float]) -> tuple[float, float] | None:
     critical = critical_values.get(len(values), 1.96)
     half_width = critical * stdev(values) / sqrt(len(values))
     return mean(values) - half_width, mean(values) + half_width
+
+
+def validate_distance_orientation_rows(
+    rows: list[dict[str, object]],
+) -> list[dict[str, object]]:
+    """Valida as nove contagens agregadas sem expandi-las em pseudotentativas."""
+    required = {
+        "distancia_m",
+        "orientacao_graus",
+        "tentativas",
+        "deteccoes",
+    }
+    keys: set[tuple[float, int]] = set()
+    normalized: list[dict[str, object]] = []
+
+    for index, row in enumerate(rows, start=2):
+        missing = required - set(row)
+        if missing:
+            raise ValueError(
+                f"linha {index} de Distancia_Orientacao sem colunas: "
+                + ", ".join(sorted(missing))
+            )
+        distance = float(row["distancia_m"])
+        angle = int(row["orientacao_graus"])
+        attempts = int(row["tentativas"])
+        detections = int(row["deteccoes"])
+        key = (distance, angle)
+        if key in keys:
+            raise ValueError(
+                "combinação repetida em Distancia_Orientacao: "
+                f"{distance:g} m e {angle} graus"
+            )
+        if attempts <= 0 or not 0 <= detections <= attempts:
+            raise ValueError(
+                f"contagem inválida em {distance:g} m e {angle} graus: "
+                f"{detections}/{attempts}"
+            )
+        keys.add(key)
+        normalized.append(
+            {
+                **row,
+                "distancia_m": distance,
+                "orientacao_graus": angle,
+                "tentativas": attempts,
+                "deteccoes": detections,
+            }
+        )
+
+    if len(normalized) != 9 or sum(
+        int(row["tentativas"]) for row in normalized
+    ) != 270:
+        raise ValueError(
+            "a matriz de distância e orientação deve conter nove combinações "
+            "e totalizar 270 tentativas"
+        )
+    return normalized
+
+
+def aggregate_distance_orientation(
+    distance_rows: list[dict[str, object]],
+    orientation_rows: list[dict[str, object]],
+    aggregate_rows: list[dict[str, object]],
+) -> list[dict[str, object]]:
+    """Integra as três fontes por célula de distância e orientação.
+
+    A soma é uma consolidação descritiva de observações que compartilham a
+    mesma distância e o mesmo ângulo. A composição de etiquetas e o nível de
+    registro podem variar entre blocos, razão pela qual os gráficos preservam
+    as duas dimensões e o texto não interpreta marginais como efeitos causais.
+    """
+    groups: dict[tuple[float, int], dict[str, object]] = defaultdict(
+        lambda: {
+            "attempts": 0,
+            "valid": 0,
+            "individual_attempts": 0,
+            "aggregate_attempts": 0,
+        }
+    )
+
+    for row in distance_rows:
+        key = (
+            float(row["distancia_horizontal_m"]),
+            int(row["orientacao_graus"]),
+        )
+        groups[key]["attempts"] = int(groups[key]["attempts"]) + 1
+        groups[key]["valid"] = int(groups[key]["valid"]) + int(
+            row["detectou_0_1"]
+        )
+        groups[key]["individual_attempts"] = (
+            int(groups[key]["individual_attempts"]) + 1
+        )
+
+    for row in orientation_rows:
+        key = (float(row["distancia_m"]), int(row["orientacao_graus"]))
+        groups[key]["attempts"] = int(groups[key]["attempts"]) + 1
+        groups[key]["valid"] = int(groups[key]["valid"]) + int(
+            row["detectou_0_1"]
+        )
+        groups[key]["individual_attempts"] = (
+            int(groups[key]["individual_attempts"]) + 1
+        )
+
+    for row in aggregate_rows:
+        key = (float(row["distancia_m"]), int(row["orientacao_graus"]))
+        attempts = int(row["tentativas"])
+        groups[key]["attempts"] = int(groups[key]["attempts"]) + attempts
+        groups[key]["valid"] = int(groups[key]["valid"]) + int(
+            row["deteccoes"]
+        )
+        groups[key]["aggregate_attempts"] = (
+            int(groups[key]["aggregate_attempts"]) + attempts
+        )
+
+    result: list[dict[str, object]] = []
+    for (distance, angle), values in sorted(groups.items()):
+        attempts = int(values["attempts"])
+        valid = int(values["valid"])
+        result.append(
+            {
+                "distance": distance,
+                "angle": angle,
+                "attempts": attempts,
+                "valid": valid,
+                "rate": valid / attempts * 100,
+                "ci95": wilson_interval(valid, attempts),
+                "individual_attempts": int(values["individual_attempts"]),
+                "aggregate_attempts": int(values["aggregate_attempts"]),
+            }
+        )
+    return result
+
+
+def marginalize_cells(
+    cells: list[dict[str, object]],
+    factor: str,
+) -> list[dict[str, object]]:
+    """Produz marginais descritivos para as tabelas de distância ou ângulo."""
+    if factor not in {"distance", "angle"}:
+        raise ValueError("factor deve ser distance ou angle")
+    groups: dict[float, dict[str, int]] = defaultdict(
+        lambda: {"attempts": 0, "valid": 0}
+    )
+    for cell in cells:
+        key = float(cell[factor])
+        groups[key]["attempts"] += int(cell["attempts"])
+        groups[key]["valid"] += int(cell["valid"])
+
+    result: list[dict[str, object]] = []
+    for value, counts in sorted(groups.items()):
+        attempts = counts["attempts"]
+        valid = counts["valid"]
+        result.append(
+            {
+                factor: value,
+                "attempts": attempts,
+                "valid": valid,
+                "rate": valid / attempts * 100,
+                "ci95": wilson_interval(valid, attempts),
+            }
+        )
+    return result
 
 
 def aggregate_distance(rows: list[dict[str, object]]) -> list[dict[str, object]]:
@@ -444,9 +594,7 @@ def render_table(
         f"{pt_number(float(row['distance']))} & {row['valid']}/{row['attempts']} & "
         f"{pt_number(float(row['rate']))}\\% & "
         f"{pt_number(float(row['ci95'][0]))}\\% a "
-        f"{pt_number(float(row['ci95'][1]))}\\% & "
-        f"{mean_stdev_text(row['first_time_mean'], row['first_time_stdev'], 3)} & "
-        f"{mean_stdev_text(row['rssi_mean'], row['rssi_stdev'])} \\\\"
+        f"{pt_number(float(row['ci95'][1]))}\\% \\\\"
         for row in distance
     )
     orientation_rows = "\n".join(
@@ -454,8 +602,7 @@ def render_table(
         f"{int(row['angle'])} & {row['valid']}/{row['attempts']} & "
         f"{pt_number(float(row['rate']))}\\% & "
         f"{pt_number(float(row['ci95'][0]))}\\% a "
-        f"{pt_number(float(row['ci95'][1]))}\\% & "
-        f"{mean_stdev_text(row['rssi_mean'], row['rssi_stdev'])} \\\\"
+        f"{pt_number(float(row['ci95'][1]))}\\% \\\\"
         for row in orientation
     )
     material_rows = "\n".join(
@@ -476,15 +623,6 @@ def render_table(
         f"{pt_number(float(orientation_tags[tag]['rate']))}\\% \\\\"
         for tag in distance_tags
     )
-    complementary_rows = "\n".join(
-        "        "
-        f"{pt_number(distance)} & {angle} & {successes}/{attempts} & "
-        f"{pt_number(successes / attempts * 100)}\\% & "
-        f"{pt_number(wilson_interval(successes, attempts)[0])}\\% a "
-        f"{pt_number(wilson_interval(successes, attempts)[1])}\\% \\\\"
-        for distance, angle, successes, attempts
-        in COMPLEMENTARY_SINGLE_TAG_RESULTS
-    )
     inventory_rows = "\n".join(
         "        "
         f"{index} & {int(row['qtd_tags_detectadas'])} & {pt_number(inventory_coverage(row))}\\% & "
@@ -498,18 +636,16 @@ def render_table(
 \\newcommand{{\\TabelaAlcanceDistancia}}{{%
 \\begin{{table}}[htbp]
     \\centering
-    \\caption{{Resultado experimental por distância horizontal.}}
+    \\caption{{Síntese descritiva das medições por distância horizontal.}}
     \\label{{tab:resultado-alcance-distancia}}
-    \\footnotesize
-    \\setlength{{\\tabcolsep}}{{3.5pt}}
-    \\begin{{tabular}}{{cccccc}}
+    \\small
+    \\setlength{{\\tabcolsep}}{{7pt}}
+    \\begin{{tabular}}{{cccc}}
         \\toprule
         \\textbf{{\\shortstack{{Distância\\\\(m)}}}} &
         \\textbf{{\\shortstack{{Detecções\\\\($n/N$)}}}} &
         \\textbf{{\\shortstack{{Taxa de\\\\leitura}}}} &
-        \\textbf{{IC 95\\%}} &
-        \\textbf{{\\shortstack{{Tempo da primeira leitura\\\\média $\\pm$ DP (s)}}}} &
-        \\textbf{{\\shortstack{{RSSI bruto\\\\média $\\pm$ DP}}}} \\\\
+        \\textbf{{IC 95\\% de Wilson}} \\\\
         \\midrule
 {distance_rows}
         \\bottomrule
@@ -521,17 +657,16 @@ def render_table(
 \\newcommand{{\\TabelaOrientacao}}{{%
 \\begin{{table}}[htbp]
     \\centering
-    \\caption{{Resultado experimental por orientação da etiqueta.}}
+    \\caption{{Síntese descritiva das medições por orientação da etiqueta.}}
     \\label{{tab:resultado-orientacao}}
     \\small
-    \\setlength{{\\tabcolsep}}{{5pt}}
-    \\begin{{tabular}}{{ccccc}}
+    \\setlength{{\\tabcolsep}}{{7pt}}
+    \\begin{{tabular}}{{cccc}}
         \\toprule
         \\textbf{{\\shortstack{{Orientação\\\\($^\\circ$)}}}} &
         \\textbf{{\\shortstack{{Detecções\\\\($n/N$)}}}} &
         \\textbf{{\\shortstack{{Taxa de\\\\leitura}}}} &
-        \\textbf{{IC 95\\%}} &
-        \\textbf{{\\shortstack{{RSSI bruto\\\\média $\\pm$ DP}}}} \\\\
+        \\textbf{{IC 95\\% de Wilson}} \\\\
         \\midrule
 {orientation_rows}
         \\bottomrule
@@ -565,7 +700,7 @@ def render_table(
 \\newcommand{{\\TabelaPorEtiqueta}}{{%
 \\begin{{table}}[htbp]
     \\centering
-    \\caption{{Desempenho agregado por conjunto formado pela etiqueta e pelo suporte nos ensaios de distância e orientação.}}
+    \\caption{{Desempenho por conjunto formado pela etiqueta e pelo suporte no subconjunto com registros individuais.}}
     \\label{{tab:resultado-por-tag}}
     \\small
     \\setlength{{\\tabcolsep}}{{4pt}}
@@ -578,28 +713,6 @@ def render_table(
         \\textbf{{\\shortstack{{Taxa de\\\\leitura}}}} \\\\
         \\midrule
 {tag_rows}
-        \\bottomrule
-    \\end{{tabular}}
-    \\fonte{{{TABLE_SOURCE}}}
-\\end{{table}}%
-}}
-
-\\newcommand{{\\TabelaEnsaioUmaTag}}{{%
-\\begin{{table}}[htbp]
-    \\centering
-    \\caption{{Ensaio complementar com uma única etiqueta e 30 tentativas por combinação.}}
-    \\label{{tab:resultado-ensaio-uma-tag}}
-    \\small
-    \\setlength{{\\tabcolsep}}{{5pt}}
-    \\begin{{tabular}}{{ccccc}}
-        \\toprule
-        \\textbf{{\\shortstack{{Distância\\\\(m)}}}} &
-        \\textbf{{\\shortstack{{Orientação\\\\($^\\circ$)}}}} &
-        \\textbf{{\\shortstack{{Detecções\\\\($n/N$)}}}} &
-        \\textbf{{\\shortstack{{Taxa de\\\\leitura}}}} &
-        \\textbf{{IC 95\\% de Wilson}} \\\\
-        \\midrule
-{complementary_rows}
         \\bottomrule
     \\end{{tabular}}
     \\fonte{{{TABLE_SOURCE}}}
@@ -664,8 +777,8 @@ def save_figure(figure, filename: str) -> None:
 
 
 def write_figures(
-    distance: list[dict[str, object]],
-    orientation: list[dict[str, object]],
+    distance_orientation: list[dict[str, object]],
+    distance_details: list[dict[str, object]],
     material: list[dict[str, object]],
     inventory: dict[str, object],
 ) -> None:
@@ -682,32 +795,53 @@ def write_figures(
         }
     )
 
-    x = [float(row["distance"]) for row in distance]
-    y = [float(row["rate"]) for row in distance]
-    lower = [value - float(row["ci95"][0]) for value, row in zip(y, distance)]
-    upper = [float(row["ci95"][1]) - value for value, row in zip(y, distance)]
-    fig, ax = plt.subplots(figsize=(10, 5.6), constrained_layout=True)
-    ax.errorbar(
-        x,
-        y,
-        yerr=[lower, upper],
-        marker="o",
-        linewidth=2.6,
-        capsize=5,
-        color="#24658f",
-    )
+    fig, ax = plt.subplots(figsize=(10, 5.8), constrained_layout=True)
+    for angle in sorted(
+        {int(row["angle"]) for row in distance_orientation}
+    ):
+        rows = sorted(
+            (
+                row
+                for row in distance_orientation
+                if int(row["angle"]) == angle
+            ),
+            key=lambda row: float(row["distance"]),
+        )
+        x = [float(row["distance"]) for row in rows]
+        y = [float(row["rate"]) for row in rows]
+        lower = [
+            value - float(row["ci95"][0])
+            for value, row in zip(y, rows)
+        ]
+        upper = [
+            float(row["ci95"][1]) - value
+            for value, row in zip(y, rows)
+        ]
+        ax.errorbar(
+            x,
+            y,
+            yerr=[lower, upper],
+            marker="o",
+            linewidth=2.2,
+            capsize=4,
+            label=f"{angle}°",
+        )
     ax.set(
         xlabel="Distância horizontal entre antena e etiqueta (m)",
         ylabel="Taxa de leitura (%)",
         ylim=(0, 105),
     )
-    ax.set_xticks(x, [pt_number(value) for value in x])
+    distances = sorted(
+        {float(row["distance"]) for row in distance_orientation}
+    )
+    ax.set_xticks(distances, [pt_number(value) for value in distances])
+    ax.legend(title="Orientação", frameon=False, ncol=3)
     save_figure(fig, "resultado_alcance_distancia.png")
     plt.close(fig)
 
     time_rows = [
         row
-        for row in distance
+        for row in distance_details
         if row["first_time_mean"] is not None
     ]
     tx = [float(row["distance"]) for row in time_rows]
@@ -731,29 +865,44 @@ def write_figures(
     save_figure(fig, "resultado_tempo_primeira_leitura.png")
     plt.close(fig)
 
-    angles = [int(row["angle"]) for row in orientation]
-    angle_rates = [float(row["rate"]) for row in orientation]
-    angle_lower = [
-        value - float(row["ci95"][0])
-        for value, row in zip(angle_rates, orientation)
-    ]
-    angle_upper = [
-        float(row["ci95"][1]) - value
-        for value, row in zip(angle_rates, orientation)
-    ]
-    fig, ax = plt.subplots(figsize=(8.5, 5.6), constrained_layout=True)
-    ax.bar(
-        [str(value) for value in angles],
-        angle_rates,
-        yerr=[angle_lower, angle_upper],
-        capsize=5,
-        color="#348663",
-    )
+    fig, ax = plt.subplots(figsize=(10, 5.8), constrained_layout=True)
+    for distance in sorted(
+        {float(row["distance"]) for row in distance_orientation}
+    ):
+        rows = sorted(
+            (
+                row
+                for row in distance_orientation
+                if float(row["distance"]) == distance
+            ),
+            key=lambda row: int(row["angle"]),
+        )
+        x = [int(row["angle"]) for row in rows]
+        y = [float(row["rate"]) for row in rows]
+        lower = [
+            value - float(row["ci95"][0])
+            for value, row in zip(y, rows)
+        ]
+        upper = [
+            float(row["ci95"][1]) - value
+            for value, row in zip(y, rows)
+        ]
+        ax.errorbar(
+            x,
+            y,
+            yerr=[lower, upper],
+            marker="o",
+            linewidth=2.0,
+            capsize=4,
+            label=f"{pt_number(distance)} m",
+        )
     ax.set(
         xlabel="Orientação da etiqueta (graus)",
         ylabel="Taxa de leitura (%)",
         ylim=(0, 105),
+        xticks=[0, 45, 90],
     )
+    ax.legend(title="Distância", frameon=False, ncol=3)
     save_figure(fig, "resultado_orientacao.png")
     plt.close(fig)
 
@@ -822,25 +971,44 @@ def main() -> int:
     workbook = load_workbook(WORKBOOK, data_only=False)
     distance_rows = rows_as_dicts(workbook, "Alcance")
     orientation_rows = rows_as_dicts(workbook, "Orientacao")
+    distance_orientation_rows = rows_as_dicts(
+        workbook, "Distancia_Orientacao"
+    )
     material_rows = rows_as_dicts(workbook, "Material")
     inventory_rows = rows_as_dicts(workbook, "Inventario")
 
     distance_rows = deduplicate_distance_rows(distance_rows)
+    distance_orientation_rows = validate_distance_orientation_rows(
+        distance_orientation_rows
+    )
     material_rows = select_official_material_rows(material_rows)
-    distance = aggregate_distance(distance_rows)
-    orientation = aggregate_orientation(orientation_rows)
+    distance_details = aggregate_distance(distance_rows)
+    distance_orientation = aggregate_distance_orientation(
+        distance_rows,
+        orientation_rows,
+        distance_orientation_rows,
+    )
+    distance = marginalize_cells(distance_orientation, "distance")
+    orientation = marginalize_cells(distance_orientation, "angle")
     material = aggregate_material(material_rows)
     inventory = inventory_metrics(inventory_rows)
     inventory["rows"] = inventory_rows
     distance_tags = tag_performance(distance_rows)
     orientation_tags = tag_performance(orientation_rows)
 
-    print("Métricas experimentais recalculadas:")
+    print("Métricas integradas de distância e orientação:")
+    for row in distance_orientation:
+        print(
+            f"  {row['distance']:.1f} m / {row['angle']:.0f} graus: "
+            f"{row['valid']}/{row['attempts']} = {row['rate']:.1f}%"
+        )
+    print("Marginais descritivos por distância:")
     for row in distance:
         print(
             f"  distância {row['distance']:.1f} m: "
             f"{row['valid']}/{row['attempts']} = {row['rate']:.1f}%"
         )
+    print("Marginais descritivos por orientação:")
     for row in orientation:
         print(
             f"  orientação {row['angle']:.0f}°: "
@@ -867,7 +1035,12 @@ def main() -> int:
         encoding="utf-8",
         newline="\n",
     )
-    write_figures(distance, orientation, material, inventory)
+    write_figures(
+        distance_orientation,
+        distance_details,
+        material,
+        inventory,
+    )
     print(f"Tabelas gravadas em: {TABLE_OUTPUT.resolve()}")
     print(f"Figuras gravadas em: {FIGURE_DIR.resolve()}")
     return 0

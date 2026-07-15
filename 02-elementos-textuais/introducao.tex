@@ -25,13 +25,13 @@ Assim, a pergunta de pesquisa foi formulada da seguinte forma:
 
 \begin{center}
     \begin{minipage}{0.82\textwidth}
-        \itshape Qual foi o desempenho observado do conjunto formado por YPD-R200, APCA8090 e AD-239 M730 nos ensaios de distância, orientação, material de fixação, etiqueta isolada e inventário, e a configuração atual atende ao requisito de identificar todos os bens em uma passagem pela sala?
+        \itshape Qual foi o desempenho observado do conjunto formado por YPD-R200, APCA8090 e AD-239 M730 nos ensaios de distância, orientação, material de fixação e inventário, e a configuração atual atende ao requisito de identificar todos os bens em uma passagem pela sala?
     \end{minipage}
 \end{center}
 
 \section{Hipótese}
 
-A hipótese exploratória é que a configuração experimental apresente maior taxa de detecção em curta distância, com etiquetas alinhadas e sobre superfície não metálica, e que o desempenho diminua com o aumento da distância, com o desalinhamento angular e com a aplicação direta sobre metal. Espera-se também que a cobertura média possa ocultar rodadas incompletas, tornando necessário avaliar EPCs únicos e omissões, e não apenas a quantidade total de quadros. Um ensaio complementar com uma única etiqueta foi acrescentado para verificar se as falhas também ocorrem sem respostas simultâneas de várias tags. Essas expectativas são avaliadas descritivamente, sem pretensão de isolar causalmente cada variável.
+A hipótese exploratória é que a configuração experimental apresente maior taxa de detecção em curta distância, com etiquetas alinhadas e sobre superfície não metálica, e que o desempenho diminua com o aumento da distância, com o desalinhamento angular e com a aplicação direta sobre metal. Espera-se também que a cobertura média possa ocultar rodadas incompletas, tornando necessário avaliar EPCs únicos e omissões, e não apenas a quantidade total de quadros. Essas expectativas são avaliadas descritivamente, sem pretensão de isolar causalmente cada variável.
 
 Como a antena usada possui polarização linear, a orientação relativa entre leitor e etiqueta é uma variável relevante. Polarização circular ou diversidade de polarização constitui a comparação futura mais diretamente relacionada à tolerância angular. Um padrão omnidirecional responde a outra questão, a cobertura azimutal, e é tratado apenas como hipótese condicionada para trabalho futuro, não como substituição automaticamente superior.
 
@@ -39,7 +39,7 @@ Como a antena usada possui polarização linear, a orientação relativa entre l
 
 A substituição do NFC por RFID UHF é relevante porque pode reduzir o trabalho item a item durante a conferência física e tornar mais frequentes as verificações de inventário. Em instituições com bens distribuídos por laboratórios e salas, uma aquisição mais ágil pode ajudar a localizar divergências mais cedo. Do ponto de vista acadêmico, o trabalho documenta uma plataforma de baixo custo cuja literatura pública é predominantemente formada por documentação de fabricante e repositórios de implementação, deixando espaço para uma avaliação experimental rastreável.
 
-O cronograma, o orçamento e os recursos disponíveis determinaram uma campanha reduzida e a seleção do leitor, da antena e das etiquetas empregados. Foram priorizados distância, orientação, material, inventário e um ensaio diagnóstico posterior com uma única etiqueta. A escolha do Laboratório de Práticas Digitais foi deliberada: uma sala fechada de uso cotidiano, com pessoas e objetos metálicos próximos, é compatível com cenários de inventário patrimonial encontrados em instituições de ensino, inclusive universidades e institutos federais. Essas características integram a condição operacional que o protótipo deverá enfrentar e não constituem, por si só, erros experimentais.
+O cronograma, o orçamento e os recursos disponíveis determinaram uma campanha reduzida e a seleção do leitor, da antena e das etiquetas empregados. Foram priorizadas medições de distância, orientação, material e inventário. A escolha do Laboratório de Práticas Digitais foi deliberada: uma sala fechada de uso cotidiano, com pessoas e objetos metálicos próximos, é compatível com cenários de inventário patrimonial encontrados em instituições de ensino, inclusive universidades e institutos federais. Essas características integram a condição operacional que o protótipo deverá enfrentar e não constituem, por si só, erros experimentais.
 
 Uma caracterização mais ampla, com várias antenas, etiquetas próprias para metal, instrumentação de RF, diferentes níveis de potência e ensaios complementares em ambiente eletromagneticamente controlado, exigiria custo e estrutura adicionais. O ambiente controlado atenderia ao objetivo de isolar mecanismos físicos específicos, enquanto a sala institucional permite observar o desempenho agregado em uma situação realista de uso. A restrição de recursos explica o tamanho do protocolo, mas não autoriza extrapolar os resultados para condições que não foram ensaiadas.
 
@@ -61,7 +61,7 @@ Desenvolver a arquitetura e o firmware de um protótipo de leitor RFID UHF passi
     \item caracterizar o módulo YPD-R200, a antena APCA8090, a etiqueta AD-239 M730 e as interfaces elétricas previstas;
     \item adaptar a comunicação serial e o tratamento dos quadros do leitor para a plataforma Arduino;
     \item distinguir o mecanismo anticolisão EPC Gen2 da acumulação de EPCs únicos pelo programa hospedeiro;
-    \item executar medições de distância, orientação, material, etiqueta isolada e inventário em sala;
+    \item executar medições de distância, orientação, material e inventário em sala;
     \item calcular taxas de sucesso, não detecção, cobertura, omissão e duplicação a partir dos dados coletados nos ensaios;
     \item verificar se a configuração identifica todos os EPCs esperados em uma passagem e analisar criticamente as tendências observadas e os limites de sua generalização;
     \item definir requisitos derivados para evoluir o leitor portátil e orientar, sem validá-la experimentalmente, uma futura arquitetura de pontos fixos;
