@@ -68,7 +68,34 @@ Como a APCA8090 é especificada como antena linear, a orientação relativa entr
 
 \subsection{Multipercurso e diversidade}
 
-Reflexão em paredes, móveis e estruturas metálicas produz multipercurso. O efeito pode criar nulos dentro da região nominal de cobertura e leituras inesperadas fora dela. Sistemas com antenas espacialmente separadas, diversidade de fase ou variação de frequência podem reduzir esses nulos \cite{sabesan2014diversity}. O YPD-R200 adquirido possui uma única conexão SMA; portanto, múltiplas zonas simultâneas exigem chaveamento externo, mais de um módulo ou outra classe de leitor.
+Em ambientes fechados, o sinal transmitido pelo leitor não se propaga apenas pelo caminho direto entre a antena e a etiqueta. Parte da energia eletromagnética é refletida por paredes, piso, teto, móveis, equipamentos e estruturas metálicas, formando múltiplos caminhos de propagação. Cada componente refletida percorre uma distância diferente e chega à tag com amplitude e fase próprias. A superposição dessas componentes pode produzir interferência construtiva, aumentando a potência recebida, ou interferência destrutiva, reduzindo o campo em pontos específicos da área de leitura.
+
+De forma conceitual, o campo total recebido pela etiqueta pode ser representado pela soma entre a componente direta e as componentes refletidas:
+
+\begin{equation}
+    E_{\text{total}} = E_{\text{direto}} + \sum_{i=1}^{N} E_i e^{-j\phi_i},
+    \label{eq:campo-total-multipercurso}
+\end{equation}
+
+\noindent em que $E_{\text{direto}}$ representa o caminho dominante, $E_i$ representa a amplitude da $i$-ésima componente refletida e $\phi_i$ representa a fase acumulada nesse percurso. Quando as componentes chegam aproximadamente em oposição de fase, o resultado pode se aproximar de zero, formando nulos de cobertura. Assim, uma etiqueta pode estar dentro do alcance estimado por modelos de perda em espaço livre e, ainda assim, não receber potência suficiente para ativar o chip ou responder de forma repetível.
+
+\citeonline{sabesan2014diversity} adotam esse problema como motivação para um sistema RFID UHF passivo de ampla cobertura baseado em diversidade de antenas, saltos de fase e saltos de frequência. A modelagem por desvanecimento Rician é adequada nesse contexto porque considera a presença simultânea de uma componente dominante de linha de visada e de múltiplas componentes refletidas. Conceitualmente, o canal pode ser descrito como a combinação ponderada entre a parcela dominante e a parcela de multipercurso:
+
+\begin{equation}
+    h = \sqrt{\frac{K}{K+1}}h_{\text{LOS}} + \sqrt{\frac{1}{K+1}}h_{\text{multipercurso}},
+    \label{eq:canal-rician}
+\end{equation}
+
+\noindent em que $h_{\text{LOS}}$ é a componente de linha de visada, $h_{\text{multipercurso}}$ agrupa as componentes refletidas e espalhadas, e $K$ expressa a razão entre a potência do caminho dominante e a potência das componentes espalhadas. Caso a linha de visada estivesse totalmente bloqueada e não existisse componente dominante, um modelo Rayleigh poderia ser mais apropriado; entretanto, em uma sala de inventário com leitor apontado para os bens, a componente direta permanece relevante.
+
+A técnica de diversidade explorada por \citeonline{sabesan2014diversity} é importante porque a posição dos nulos depende das fases relativas entre os caminhos. Para um percurso de comprimento $d_i$, a fase acumulada pode ser relacionada ao comprimento de onda por:
+
+\begin{equation}
+    \phi_i = \frac{2\pi d_i}{\lambda}.
+    \label{eq:fase-percurso}
+\end{equation}
+
+\noindent Como $\lambda = c/f$, alterações na frequência deslocam as fases relativas das componentes refletidas. De modo semelhante, saltos de fase e o uso de antenas em posições diferentes modificam a distribuição espacial dos nulos. Uma tag que esteja em uma zona de interferência destrutiva em determinada configuração pode receber potência suficiente em outra. No protótipo deste trabalho, essa fundamentação justifica a preocupação com repetibilidade, altura, distância, orientação e ambiente de teste. O YPD-R200 adquirido possui uma única conexão SMA; portanto, a implementação completa de diversidade com múltiplas antenas não faz parte do escopo prático, mas o fenômeno de multipercurso deve ser considerado na interpretação dos resultados.
 
 \section{Etiqueta AD-239 M730}
 

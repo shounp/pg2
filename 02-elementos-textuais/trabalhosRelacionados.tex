@@ -21,7 +21,7 @@ Este capítulo compara estudos que empregam RFID UHF em inventário, rastreament
 
 \section{Cobertura e pontos de passagem}
 
-\citeonline{sabesan2014diversity} mostraram que diversidade de antenas, fase e frequência pode reduzir nulos de multipercurso em áreas amplas. Esse resultado é relevante para salas com superfícies refletoras, mas a solução utiliza múltiplas antenas e supera a capacidade direta do YPD-R200 de uma porta.
+\citeonline{sabesan2014diversity} mostraram que diversidade de antenas, fase e frequência pode reduzir nulos de multipercurso em áreas amplas. A justificativa física adotada pelos autores é diretamente relacionada ao presente trabalho: em ambiente interno, a etiqueta pode receber uma componente dominante de linha de visada combinada com reflexões em paredes, piso, teto, mobiliário e equipamentos, caracterizando um canal com desvanecimento Rician. Esse resultado é relevante para interpretar falhas de leitura dentro da região nominal de cobertura e para justificar ensaios com variação de distância, altura e orientação. A solução completa dos autores, entretanto, utiliza múltiplas antenas e supera a capacidade direta do YPD-R200 de uma porta.
 
 Para detectar sentido de deslocamento, \citeonline{wang2022rfaccess} utilizaram duas antenas e um modelo temporal. O trabalho confirma que a identificação de uma tag em uma porta e a inferência de entrada ou saída são problemas distintos. No presente projeto, pontos fixos são discutidos como extensão e não como funcionalidade já entregue pelo protótipo de uma antena.
 
@@ -39,7 +39,7 @@ A \autoref{tab:trabalhos-relacionados} sintetiza a relação dos estudos com est
         \citeonline{chen2022inventory} & Inventário & Sistema integrado & Representa a camada de aplicação futura, não implementada neste protótipo. \\
         \citeonline{ibrahim2018lab} & Equipamentos de laboratório & Baixo custo e IoT & Aproxima-se do ambiente institucional e justifica a escolha de hardware acessível. \\
         \citeonline{iorga2026} & Inventário automático & Processo e disposição física & Reforça a necessidade de avaliar geometria, orientação e cobertura. \\
-        \citeonline{sabesan2014diversity} & Cobertura UHF ampla & Diversidade de antenas & Fundamenta a limitação de uma única antena em ambientes com multipercurso. \\
+        \citeonline{sabesan2014diversity} & Cobertura UHF ampla & Multipercurso e diversidade & Fundamenta a análise de nulos de cobertura e a limitação de uma única antena em ambientes internos. \\
         \citeonline{wang2022rfaccess} & Controle de passagem & Direção com duas antenas & Demonstra os requisitos adicionais para distinguir entrada e saída. \\
         \bottomrule
     \end{tabularx}
