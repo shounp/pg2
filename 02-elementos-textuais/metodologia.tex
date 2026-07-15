@@ -7,59 +7,45 @@
 
 \section{Caracterização da pesquisa}
 
-Esta pesquisa é aplicada, experimental e quantitativa. A unidade de análise é o conjunto formado por leitor, antena, etiqueta, objeto de suporte e aquisição serial. O estudo é dividido em duas etapas: desenvolvimento do protótipo e avaliação controlada de seu desempenho.
+Esta pesquisa é aplicada, quantitativa e experimental. Ela reúne o desenvolvimento da arquitetura e do firmware de um protótipo RFID UHF e a execução de uma campanha de medições com o conjunto formado por leitor, antena e tag. A unidade de análise é a combinação entre leitor, antena, etiqueta, material de fixação, geometria e condição de teste.
 
-O inventário portátil de uma sala constitui o cenário principal. O uso em pontos fixos é avaliado apenas quanto aos requisitos de arquitetura e à detecção de passagem; a determinação de sentido não será considerada implementada sem duas zonas espacialmente distinguíveis.
+O inventário portátil constitui o cenário principal. O ponto fixo é tratado como detecção de presença em uma zona de leitura; a direção do movimento não é inferida com uma única antena. Os percentuais apresentados neste trabalho resultam dos dados coletados durante a campanha experimental.
 
-\section{Requisitos do protótipo}
+\section{Configuração experimental}
 
-Foram definidos os seguintes requisitos:
-
-\begin{itemize}
-    \item operar com tags passivas compatíveis com EPC Gen2/ISO/IEC 18000-63;
-    \item adquirir EPCs de tamanho variável pela interface UART do YPD-R200;
-    \item permitir configuração documentada da potência e da região de operação;
-    \item registrar EPC, instante da leitura, RSSI bruto e condição experimental;
-    \item acumular EPCs únicos durante uma janela de inventário;
-    \item funcionar com fonte transportável ou de bancada sem depender da corrente fornecida pela UART;
-    \item permitir repetição dos ensaios de distância, orientação, material e população de etiquetas AD-239 M730.
-\end{itemize}
-
-\section{Materiais}
-
-O conjunto experimental considerado neste trabalho é formado pelo módulo YPD-R200, pela antena Airplux APCA8090 e pela etiqueta Avery Dennison Smartrac AD-239 M730. A etiqueta é adotada como única tag do estudo porque seu datasheet fornece chip, memórias, dimensões e padrão de operação \cite{avery2022ad239m730}.
-
-O datasheet do YPD-R200 fornece os parâmetros elétricos do leitor \cite{yanpodo2021r200}. O protocolo serial documenta a estrutura dos comandos \cite{yanpodo2016protocol}. As especificações da antena são tomadas da página técnica da APCA8090 \cite{airplux2026apca8090}.
+A configuração utilizada nos ensaios é formada pelo YPD-R200, pela antena Airplux APCA8090 e pela etiqueta Avery Dennison Smartrac AD-239 M730. A \autoref{tab:materiais-prototipo} reúne as especificações de referência e as condições elétricas registradas.
 
 \begin{table}[htbp]
     \centering
+    \caption{Componentes empregados na campanha experimental.}
+    \label{tab:materiais-prototipo}
     \small
     \begin{tabularx}{\textwidth}{p{3.2cm}X}
         \toprule
-        \textbf{Componente} & \textbf{Especificação considerada} \\
+        \textbf{Componente} & \textbf{Especificação de referência} \\
         \midrule
-        Leitor & YPD-R200, variante de até 26~dBm, EPC Gen2/ISO 18000-6C, alimentação de 3,6 a 5,5~V, UART TTL a 115200~bit/s e conexão SMA \cite{yanpodo2021r200}. \\
-        Antena & Airplux APCA8090, 5~dBi, polarização linear, frequências centrais de 915~MHz e 866,5~MHz, impedância de 50~$\Omega$, conector SMA ou customizado, elemento cerâmico de 80~$\times$~80~$\times$~7~mm e placa de 90~$\times$~90~mm \cite{airplux2026apca8090}. \\
-        Tag de teste & Avery Dennison Smartrac AD-239 M730, chip Impinj M730, 860--960~MHz, ISO/IEC 18000-63, EPC Class 1 Gen2, antena de 70~$\times$~14,5~mm, EPC de 128 bits e TID de 96 bits \cite{avery2022ad239m730}. \\
-        Controlador & Arduino Uno/Nano na montagem inicial; plataforma com UART de hardware adicional recomendada para os ensaios de múltiplas tags. \\
-        Alimentação & Fonte externa regulada de 5~V e capacidade mínima superior ao pico de aproximadamente 380~mA informado para a variante de 26~dBm. \\
-        Adequação lógica & Divisor resistivo ou conversor de nível no caminho Arduino TX $\rightarrow$ R200 RXD, pois a UART do módulo opera em 3,3~V. \\
+        Leitor & YPD-R200, variante com potência máxima nominal de 26~dBm, aproximadamente 398~mW no conector de RF, EPC Gen2/ISO 18000-6C, alimentação de 3,6 a 5,5~V, UART TTL a 115200~bit/s e conexão SMA \cite{yanpodo2021r200}. \\
+        Antena & Airplux APCA8090, ganho nominal de 5~dBi, polarização linear, frequências centrais informadas de 915~MHz e 866,5~MHz, impedância de 50~$\Omega$ e elemento cerâmico de 80~$\times$~80~$\times$~7~mm \cite{airplux2026apca8090}. \\
+        Tag & Avery Dennison Smartrac AD-239 M730, chip Impinj M730, de 860 a 960~MHz, ISO/IEC 18000-63, EPC Class 1 Gen2, memória EPC de 128 bits e aplicação recomendada em superfícies não metálicas \cite{avery2022ad239m730}. \\
+        Controlador & Arduino Uno, com uso da abstração \texttt{Stream} e de \texttt{SoftwareSerial} na captura dos quadros. \\
+        Alimentação e lógica & Foram utilizados, em momentos distintos, uma fonte externa de 5~V/1~A e o fornecimento de energia pela conexão USB do Arduino. O caminho Arduino TX $\rightarrow$ R200 RXD requer adequação de 5~V para 3,3~V; o emprego efetivo desse adequador não ficou confirmado de modo inequívoco. \\
         \bottomrule
     \end{tabularx}
-    \caption{Materiais e especificações adotados no protótipo.}
-    \label{tab:materiais-prototipo}
+    \fonte{Elaborado pelo autor a partir da montagem experimental e dos documentos dos fabricantes (2026).}
 \end{table}
 
-A escolha da AD-239 M730 altera um detalhe importante da aquisição: seu EPC documentado possui 128 bits. Assim, o programa embarcado não pode assumir tamanho fixo de 12 bytes. O parser deve extrair o comprimento do quadro recebido e registrar o EPC completo informado pelo YPD-R200.
+O leitor, a antena e o Arduino foram montados em bancada. A campanha principal ocorreu em 13 de julho de 2026, no Laboratório de Práticas Digitais, ambiente fechado de aproximadamente 50~m$^2$. Durante essa campanha, havia cerca de cinco pessoas e quatro objetos metálicos próximos. Essa configuração é compatível com uma sala institucional de uso cotidiano e foi adotada como cenário realista de inventário patrimonial, e não como substituta de uma bancada destinada à caracterização eletromagnética. Utilizaram-se UART a 115200~bit/s e o comando nominal de potência máxima de 26~dBm, correspondente a aproximadamente 398~mW no conector do módulo. Não houve instrumento ou comando de leitura posterior que confirmasse a potência efetivamente aplicada ou irradiada. Em momentos distintos da coleta principal foram empregados a fonte externa de 5~V/1~A e o arranjo alimentado pela conexão USB do Arduino. Após as medições, verificou-se que a alternância entre as formas de alimentação não produziu alteração relevante nos resultados obtidos. A altura da antena e da tag foi mantida em 150~cm nas medições de distância, orientação e material. Foram aguardados 3~s antes da primeira tentativa e 2~s entre tentativas.
 
-\section{Desenvolvimento do protótipo}
+A região, o canal e o comportamento de salto de frequência não foram lidos de volta pelo firmware durante a campanha. Assim, embora a potência nominal, a antena e a faixa regulamentar aplicável sejam conhecidas, os dados coletados não demonstram por si só a subfaixa efetivamente utilizada nem a potência irradiada. Essas ausências foram mantidas como ameaças à validade, em vez de se presumir conformidade a partir de uma configuração nominal.
 
-\subsection{Arquitetura}
+\section{Montagem e coleta}
 
-A arquitetura implementada separa a interface aérea da aquisição digital. O YPD-R200 executa o protocolo RFID e entrega quadros pela UART; o Arduino envia comandos, interpreta notificações e apresenta os dados ao computador.
+Nos ensaios de distância, orientação e material, o leitor e a antena permaneceram fixos e buscou-se manter as demais condições enquanto se variava o fator de cada bloco. As condições foram executadas em grupos e não houve aleatorização formal da ordem. No inventário em sala, o conjunto foi deslocado pelo operador ao longo de um percurso curto. O registro serial foi capturado junto com o EPC observado, o tempo até a primeira leitura e observações sobre leituras externas, \textit{timeout} e quadros inválidos. O RSSI fornecido pelo módulo foi registrado em formato bruto, sem conversão para dBm, porque a campanha não incluiu calibração instrumental suficiente para isso. A \autoref{fig:arquitetura-prototipo} sintetiza o fluxo entre a etiqueta, o leitor, o Arduino e os dados coletados.
 
 \begin{figure}[htbp]
     \centering
+    \caption{Arquitetura funcional usada na campanha experimental.}
+    \label{fig:arquitetura-prototipo}
     \setlength{\tabcolsep}{3pt}
     \begin{tabular}{ccccc}
         \fbox{\shortstack{AD-239 M730\\EPC Gen2}}
@@ -67,138 +53,111 @@ A arquitetura implementada separa a interface aérea da aquisição digital. O Y
         \fbox{\shortstack{Antena\\5 dBi}}
         & $\rightleftarrows$ &
         \fbox{\shortstack{YPD-R200\\RF + protocolo}}
-        \\[0.5cm]
-        &&&& $\downarrow$ UART TTL \\[0.3cm]
+        \\
+        &&&& $\downarrow$ UART TTL \\
         &&&& \fbox{\shortstack{Arduino\\aquisição}} $\longrightarrow$
-        \fbox{\shortstack{Computador\\registro}}
+        \fbox{\shortstack{Dados\\coletados}}
     \end{tabular}
-    \caption{Arquitetura correta do protótipo implementado.}
-    \label{fig:arquitetura-prototipo}
+    \fonte{Elaborado pelo autor (2026).}
 \end{figure}
 
-Não há conversor RS232 no protótipo. A comunicação utiliza diretamente a UART TTL disponível na placa do YPD-R200. Essa distinção é importante porque RS232 e TTL possuem níveis elétricos e polaridades diferentes.
+O firmware carregado no Arduino foi desenvolvido para esta campanha. Durante uma janela de inventário, a implementação compara EPCs pelo conteúdo e pelo comprimento, cria uma entrada apenas para cada EPC ainda não visto, incrementa a contagem das repetições e separa tags cadastradas de leituras externas. Portanto, a deduplicação usada no inventário foi executada no Arduino; ela não foi inferida posteriormente apenas a partir da quantidade total de quadros.
 
-\subsection{Integração elétrica}
+\subsection{Ensaios de distância}
 
-No Arduino Uno/Nano, D0 e D1 são usados pela UART de hardware e pela comunicação USB. A montagem inicial reservou essa interface para o monitor serial e criou uma porta com \texttt{SoftwareSerial} nos pinos D10 e D11.
+O ensaio de alcance utilizou quatro distâncias horizontais: 0,5~m, 1,0~m, 1,5~m e 2,0~m. Cada distância foi repetida 15 vezes, totalizando 60 tentativas. As tags TAG1, TAG2 e TAG3 foram empregadas, com 5 tentativas por conjunto de etiqueta com suporte em cada distância. Os registros atualizados associam TAG1 a papelão, TAG2 a madeira e TAG3 a plástico. Esses três conjuntos aparecem em todos os níveis de distância, o que preserva a composição do painel entre as condições, mas impede separar o efeito do exemplar do efeito de seu suporte. A janela de medição foi de 3~s, com antena e tag na mesma altura de 150~cm e orientação de referência de 0$^\circ$. Considerou-se bem-sucedida a tentativa na qual o EPC esperado foi identificado pelo menos uma vez dentro da janela. O número de repetições foi definido em função do tempo de bancada disponível.
 
-\begin{table}[htbp]
-    \centering
-    \begin{tabularx}{\textwidth}{p{2.6cm}p{3.0cm}X}
-        \toprule
-        \textbf{YPD-R200} & \textbf{Arduino/fonte} & \textbf{Função} \\
-        \midrule
-        5V & Fonte externa de 5~V & Alimentação do leitor; não usar a saída do Arduino nos ensaios de potência máxima. \\
-        GND & GND comum & Referência da fonte, do leitor e do microcontrolador. \\
-        TXD & D10 & Dados do leitor para o RX implementado em software. \\
-        RXD & D11 por adequador de nível & Comandos do Arduino para a entrada TTL de 3,3~V do módulo. \\
-        \bottomrule
-    \end{tabularx}
-    \caption{Conexões elétricas para a versão corrigida do protótipo.}
-    \label{tab:conexoes-r200}
-\end{table}
+\subsection{Ensaios de orientação}
 
-A ligação direta de D11 ao RXD foi usada apenas na validação inicial e é registrada como limitação. Antes dos ensaios prolongados, ela deve ser substituída por adequação de nível. A fonte externa deve permanecer com terra comum ao Arduino.
+O ensaio de orientação manteve a distância em 1,5~m e variou a orientação relativa em 0$^\circ$, 45$^\circ$ e 90$^\circ$. O ângulo de 0$^\circ$ correspondeu ao alinhamento de referência entre as orientações lineares da antena e da etiqueta. Cada ângulo recebeu 15 tentativas, distribuídas entre TAG1 com papelão, TAG2 com madeira e TAG3 com plástico. A janela de 3~s foi mantida para observar a associação com a orientação sem alterar deliberadamente o restante da montagem.
 
-\subsection{Adaptação da biblioteca}
+\subsection{Ensaio complementar com uma etiqueta isolada}
 
-O código de referência foi obtido do projeto de \citeonline{playfultechnology2023r200}, originalmente direcionado ao ESP32. A classe recebia \texttt{HardwareSerial*} e inicializava \texttt{Serial2}; o Arduino Uno/Nano não possui essa interface. A implementação local alterou o atributo para \texttt{Stream*}, permitindo fornecer uma instância de \texttt{SoftwareSerial} já inicializada.
+Foi realizado um ensaio complementar para verificar se as perdas de leitura também ocorriam sem respostas simultâneas de várias etiquetas. Uma única tag foi mantida na zona de leitura e testada nas distâncias de 1,0, 2,0 e 5,0~m, com orientações de 0$^\circ$, 45$^\circ$ e 90$^\circ$. Para cada uma das nove combinações foram registradas 30 tentativas, totalizando 270. A saída preservada para esse bloco contém as contagens de detecções por combinação; por isso, seus resultados são analisados separadamente e não são combinados com os ensaios anteriores de três conjuntos formados por etiqueta e suporte. A finalidade diagnóstica era verificar se o enlace individual já apresentava limitação antes de atribuir as omissões do inventário ao processo de anticolisão.
 
-Também foram adicionados o comando de potência \texttt{0xB6} e um buffer de recepção de 128 bytes. O quadro usado para 26,00~dBm é \texttt{AA 00 B6 00 02 0A 28 EA DD}. Sua estrutura segue o protocolo serial do módulo \cite{yanpodo2016protocol}.
+\subsection{Ensaios de material}
 
-A versão atual lê quadros de inventário individual e armazena o último EPC. Essa abordagem confirma a comunicação, mas é insuficiente para avaliar uma população: alternar entre tags pode produzir impressões repetidas e o simples teste ``EPC diferente do anterior'' não elimina duplicatas de toda a janela.
+O ensaio de material fixou a distância em 1,5~m e utilizou TAG1 em três condições: papelão, metal direto e metal com espaçador de 10~mm. Cada condição foi repetida 5 vezes. A janela de 3~s foi mantida e o espaçador foi utilizado para verificar se a separação física recuperava a leitura em condição crítica.
 
-\subsection{Tratamento de múltiplas tags}
+\subsection{Inventário em sala}
 
-O firmware do YPD-R200 executa o mecanismo anticolisão Gen2. Para o experimento de múltiplas tags, o programa hospedeiro deverá implementar uma tabela de EPCs únicos. Cada notificação válida atualiza a contagem e o último instante da tag correspondente; um EPC ainda não presente é inserido, respeitando o limite de memória.
-
-\begin{algorithm}[htbp]
-    \caption{Acumulação de EPCs em uma janela de inventário}
-    limpar a tabela de EPCs\;
-    iniciar a rodada de inventário no YPD-R200\;
-    \While{a janela de medição estiver ativa}{
-        receber o próximo quadro completo\;
-        \If{o quadro for válido e contiver um EPC}{
-            \eIf{o EPC já estiver na tabela}{
-                incrementar sua contagem e atualizar RSSI e instante\;
-            }{
-                inserir EPC, RSSI, contagem inicial e instante\;
-            }
-        }
-    }
-    enviar o comando de parada e registrar as métricas\;
-    \label{alg:inventario-epc}
-\end{algorithm}
-
-No Arduino Uno/Nano, a tabela deve ter tamanho fixo devido aos 2~kB de SRAM. Vinte EPCs de 16 bytes, caso da AD-239 M730, consomem 320 bytes apenas para os identificadores, sem contar contadores e timestamps. Se o objetivo evoluir para dezenas ou centenas de tags, deve-se migrar para uma plataforma com mais memória e UART de hardware.
-
-\section{Cenários experimentais}
-
-\subsection{Inventário portátil}
-
-Em cada rodada, uma população conhecida de bens etiquetados será distribuída em uma sala. O operador percorrerá uma rota predeterminada por tempo fixo, mantendo a antena aproximadamente à mesma altura e velocidade. A saída será o conjunto de EPCs únicos observado. Não será estimada a posição exata de cada bem.
-
-\subsection{Ponto fixo}
-
-Uma montagem estacionária será usada para verificar detecção de uma tag em movimento através de uma zona de leitura. Esse ensaio registra presença e instante. O sentido de deslocamento não será inferido com a configuração de uma antena. Será apenas documentada a arquitetura futura de duas zonas, na qual a ordem temporal A--B ou B--A fornece uma hipótese de entrada ou saída.
-
-\section{Plano de ensaios}
-
-Os ensaios devem utilizar a mesma configuração regional, potência, cabo e posição da antena. Antes de cada série serão registrados temperatura aproximada, presença de estruturas metálicas e identificação da tag.
+O inventário utilizou cinco tags presentes simultaneamente e cinco rodadas de observação. Cada janela teve 25~s, tempo superior ao dos demais ensaios porque o objetivo era acumular EPCs distintos e não apenas validar uma leitura isolada. O operador repetiu um percurso curto padronizado. A métrica diagnóstica foi a cobertura por rodada, enquanto o critério operacional foi identificar as cinco tags na mesma passagem. Essa população constituía a etapa inicial de um escalonamento gradual até aproximadamente 50 etiquetas. A ampliação dependia de cobertura integral na etapa inicial; como nenhuma rodada foi completa, o número de tags não foi aumentado. A disposição usual do laboratório foi preservada para representar a operação cotidiana em uma sala institucional de aproximadamente 50~m$^2$. Como suas dimensões lineares, o trajeto e as coordenadas das tags não foram registrados com precisão, esse bloco permite avaliar o desempenho entre as cinco rodadas, mas não reproduzir exatamente a distribuição espacial da campanha. A \autoref{tab:plano-ensaios} resume os fatores, as repetições e as saídas efetivamente analisadas.
 
 \begin{table}[htbp]
     \centering
-    \footnotesize
-    \begin{tabularx}{\textwidth}{p{2.7cm}p{4.0cm}p{3.0cm}X}
-        \toprule
-        \textbf{Ensaio} & \textbf{Fatores e níveis} & \textbf{Repetição mínima} & \textbf{Saída} \\
-        \midrule
-        Distância & 0,5 a 4,0~m, em passos de 0,5~m & 30 consultas por ponto e tag & Taxa de sucesso e maior distância repetível. \\
-        Orientação & 0, 45 e 90 graus em relação à referência da antena & 30 consultas por combinação & Variação da taxa de sucesso com o ângulo. \\
-        Material & Ar, papelão, madeira, plástico e metal & 30 consultas por material & Efeito do suporte e degradação da AD-239 M730 sobre metal. \\
-        Potência & Níveis documentados entre 15 e 26~dBm & 30 consultas por nível em distância fixa & Relação entre potência configurada e sucesso. \\
-        População & 1, 3, 5 e 10 tags & 10 janelas de inventário por população & Cobertura, tempo de descoberta e duplicatas. \\
-        Sala & População conhecida e rota fixa & 5 percursos completos & Recuperação dos bens presentes e leituras externas. \\
-        Passagem & Tag atravessando uma zona fixa em velocidades controladas & 20 travessias por condição & Proporção de passagens detectadas, sem inferência de direção. \\
-        \bottomrule
-    \end{tabularx}
-    \caption{Plano mínimo de ensaios do protótipo.}
+    \caption{Cenários e parâmetros executados na campanha experimental.}
     \label{tab:plano-ensaios}
+    \footnotesize
+    \begin{tabularx}{\textwidth}{p{3.2cm}p{4.2cm}p{3.0cm}X}
+        \toprule
+        \textbf{Cenário} & \textbf{Fatores e níveis} & \textbf{Repetições} & \textbf{Saída analisada} \\
+        \midrule
+        Distância & 0,5; 1,0; 1,5; 2,0~m, com três conjuntos de etiqueta e suporte & 15 por distância & Taxa de leitura, tempo até a primeira leitura e RSSI bruto. \\
+        Orientação & 0$^\circ$, 45$^\circ$ e 90$^\circ$ a 1,5~m, com os mesmos três conjuntos & 15 por ângulo & Taxa de leitura e RSSI bruto. \\
+        Etiqueta isolada & 1,0; 2,0; 5,0~m combinados com 0$^\circ$, 45$^\circ$ e 90$^\circ$ & 30 por combinação & Detecções, taxa de leitura e IC 95\% de Wilson. \\
+        Material & Papelão, metal direto e metal com espaçador de 10~mm & 5 por condição & Taxa de leitura e RSSI bruto. \\
+        Inventário & Cinco tags em sala, janela de 25~s & 5 rodadas & EPCs distintos, cobertura, omissões e duplicatas. \\
+        \bottomrule
+    \end{tabularx}
+    \fonte{Elaborado pelo autor a partir do protocolo experimental e dos dados coletados (2026).}
 \end{table}
 
-O ensaio sobre metal não tem o objetivo de validar a AD-239 M730 como etiqueta própria para esse tipo de superfície. Ele deve ser interpretado como teste de degradação, pois a etiqueta adotada é especificada para aplicações não metálicas.
+\FloatBarrier
 
-\section{Métricas}
+Não foram executados ensaios independentes de passagem em porta, variação de altura, variação controlada de potência ou comparação entre antenas. Consequentemente, esses fatores são tratados apenas como requisitos ou possibilidades de continuidade e não originam resultados neste trabalho.
 
-Para $N_t$ consultas individuais e $N_v$ respostas válidas, a taxa de sucesso de leitura é:
+\section{Métricas e tratamento dos dados coletados}
+
+Para $N_t$ tentativas e $N_v$ detecções, a taxa de sucesso é:
 
 \begin{equation}
     T_s = \frac{N_v}{N_t}\times 100\%.
     \label{eq:taxa-sucesso}
 \end{equation}
 
-Em uma janela com $N_p$ tags presentes e $N_d$ EPCs distintos detectados, a cobertura do inventário é:
+Em uma rodada com $N_p$ tags presentes e $N_d$ EPCs distintos detectados, a cobertura é:
 
 \begin{equation}
     C = \frac{N_d}{N_p}\times 100\%.
     \label{eq:cobertura}
 \end{equation}
 
-Também serão registrados o tempo até a primeira leitura, o tempo para identificar toda a população, a quantidade de quadros inválidos e a taxa de duplicação:
+Para $N_r$ rodadas de inventário e $N_c$ rodadas nas quais todos os EPCs esperados foram identificados, a taxa de inventários completos é:
 
 \begin{equation}
-    T_{dup} = \frac{N_v-N_d}{N_v}\times 100\%.
+    T_c = \frac{N_c}{N_r}\times 100\%.
+    \label{eq:taxa-inventarios-completos}
+\end{equation}
+
+A taxa de não detecção e a taxa de omissão são os complementos dessas métricas:
+
+\begin{equation}
+    T_{nl} = \frac{N_t-N_v}{N_t}\times 100\% = 100\%-T_s,
+    \label{eq:taxa-nao-leitura}
+\end{equation}
+
+\begin{equation}
+    T_o = \frac{N_p-N_d}{N_p}\times 100\% = 100\%-C.
+    \label{eq:taxa-omissao}
+\end{equation}
+
+Para $N_q$ eventos válidos e $N_d$ EPCs distintos, a taxa de duplicação é:
+
+\begin{equation}
+    T_{dup} = \frac{N_q-N_d}{N_q}\times 100\%.
     \label{eq:duplicacao}
 \end{equation}
 
-Para o ensaio em sala, falsos negativos são bens presentes não detectados; leituras de tags fora do ambiente são tratadas como falsos positivos operacionais. A distância será considerada repetível apenas se a taxa de sucesso atingir ao menos 90\% nas condições definidas. Esse limiar é um critério experimental deste trabalho, não uma especificação universal da tecnologia.
+Os indicadores foram calculados a partir dos dados coletados durante os ensaios. Para cada proporção de detecção e para a proporção de rodadas completas foi calculado o intervalo de confiança de 95\% pelo método de Wilson, adequado inclusive quando a taxa observada é 0\% ou 100\%. Para tempo até a primeira leitura e RSSI bruto são apresentados média e desvio-padrão amostral entre as detecções válidas. No inventário, a cobertura média é acompanhada do desvio-padrão entre rodadas e de um intervalo exploratório de 95\% para a média com distribuição $t$ de Student. O intervalo da cobertura média descreve a fração média de etiquetas identificadas, não a probabilidade de terminar o inventário. Para a decisão operacional, utiliza-se $T_c$, pois uma cobertura parcial não atende ao requisito de conferir todos os bens em uma passagem. Esses intervalos descrevem a incerteza da amostra, mas devem ser lidos como exploratórios: as janelas reutilizam as mesmas etiquetas e o mesmo ambiente, de modo que não constituem observações plenamente independentes. Não foram aplicados testes de significância, pois o número reduzido de repetições e essa estrutura de dependência não sustentariam inferências amplas. Como o RSSI foi armazenado em formato bruto, ele é tratado apenas como indicador relativo do conjunto formado por leitor, tag e ambiente.
 
-\section{Ameaças à validade}
+\section{Validade prática e limitações}
 
-Os principais fatores de confusão são multipercurso, orientação não controlada, variação de alimentação, diferença entre exemplares de tags, interferência externa e limitação da serial em software. Para reduzir esses efeitos, cada série deverá alterar apenas um fator principal, repetir as medições e registrar a configuração completa.
+A principal limitação é o tamanho da amostra e a realização dos ensaios em uma única sala. A escolha de um laboratório institucional de uso cotidiano, com ocupação e objetos metálicos próximos, fortalece a validade prática da avaliação: essas condições são compatíveis com ambientes nos quais ocorre a conferência patrimonial e integram o funcionamento esperado, não sendo tratadas como erros experimentais. Como os elementos do ambiente não foram posicionados e variados independentemente, os resultados expressam o desempenho conjunto no cenário observado, sem permitir quantificar separadamente as contribuições do multipercurso e da movimentação de pessoas. Nos ensaios de distância e orientação, a identidade da etiqueta e o material de suporte permaneceram associados, o que também impede atribuir diferenças entre TAG1, TAG2 e TAG3 apenas ao exemplar. O ensaio complementar preservou contagens agregadas, mas não RSSI, tempo individual, ordem das tentativas ou diagnóstico serial por tentativa. Também não houve instrumentação de RF para calibrar o RSSI ou caracterizar o canal.
 
-Os resultados serão válidos para os componentes ensaiados e não devem ser generalizados para qualquer leitor R200 ou tag UHF. Em especial, o nome R200 é usado comercialmente por equipamentos diferentes. As especificações atribuídas neste trabalho referem-se ao YPD-R200 documentado pelo fabricante, e não ao leitor HARTING RF-R200.
+A montagem elétrica e a configuração de RF também possuem lacunas de rastreabilidade. O emprego do adequador de nível entre D11 e RXD não ficou confirmado de modo inequívoco, e região, canal, salto de frequência e potência efetiva não foram verificados por leitura posterior ou instrumentação. Além disso, quadros inválidos e \textit{timeouts} foram observados com \texttt{SoftwareSerial} a 115200~bit/s, mas não houve analisador lógico para separar perda serial de ausência de resposta no enlace de RF.
 
-\section{Conformidade e segurança de operação}
+Outra limitação é o uso de uma única antena linear. Isso foi suficiente para caracterizar a referência do protótipo, mas não permite comparar diretamente outras geometrias. Polarização circular ou diversidade de polarização trata mais diretamente a sensibilidade angular observada. Uma antena omnidirecional é uma hipótese distinta para ampliar cobertura azimutal na varredura portátil e pode também aumentar multipercurso ou leituras externas. Ambas as possibilidades exigem comparação sob o mesmo protocolo.
 
-O módulo será configurado para subfaixa permitida no Brasil e utilizado em sessões controladas. A potência nominal de 26~dBm não deve ser tratada como autorização regulatória automática, pois a emissão efetiva depende também da antena e das condições definidas pela Anatel \cite{anatelrfid}. Para uma implantação permanente, o conjunto deve utilizar equipamento homologado e configuração regional verificável.
+Registros fotográficos da montagem foram preservados como documentação auxiliar. Como não constituem medição quantitativa e a arquitetura está representada esquematicamente, sua inclusão no corpo da monografia não foi necessária para interpretar os resultados.
+
+Por fim, o firmware ainda não é um sistema patrimonial completo. Ele deduplica os EPCs durante a janela e sustenta a campanha atual, mas uma versão operacional futura deve incluir persistência de dados, filtros mais robustos e validação em mais de uma sessão e ambiente de coleta.

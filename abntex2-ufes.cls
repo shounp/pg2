@@ -32,7 +32,6 @@
 \ProcessOptions\relax
 \LoadClass{abntex2}
 
-\RequirePackage[brazilian,hyperpageref]{backref}        % Produzir índice nas referências
 \RequirePackage{makeidx}                                % Produzir índice remissivo de palavras
 \RequirePackage{chngcntr}
 
@@ -40,21 +39,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % CONFIGURAÇÕES GERAIS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% Configurações do pacote backref
-\renewcommand{\backrefpagesname}{Citado na(s) p\'agina(s):~}
-% Texto padrão antes do número das páginas
-\renewcommand{\backref}{}
-% Define os textos da citação
-\renewcommand*{\backrefalt}[4]{%
-    \ifcase #1
-        Nenhuma cita\c{c}\~ao no texto.
-    \or
-        Citado na p\'agina #2.
-    \else
-        Citado #1 vezes nas p\'aginas #2.
-    \fi
-}
 
 % Define a numeração das equações de forma sequencial
 \counterwithout{equation}{chapter}
@@ -83,17 +67,29 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Elementos pré-textuais
+% A folha de rosto precisa terminar com \newpage para que, em impressão
+% frente e verso, a ficha catalográfica seja colocada no verso. Esta é a
+% variante estrelada prevista pelo próprio abnTeX2, aplicada ao arquivo de
+% folha de rosto mantido pelo modelo da UFES.
+\renewenvironment{folhaderosto}[1][\folhaderostoname]
+    {\clearpage\PRIVATEbookmarkthis{#1}}
+    {\newpage}
+
 \renewcommand{\pretextual}{%
-    \pagenumbering{roman} % Algarismos romanos
-    \aliaspagestyle{chapter}{plain}
-    \pagestyle{plain}
+    % As folhas pré-textuais são contadas em algarismos arábicos, mas o
+    % número permanece oculto. A contagem começa na folha de rosto; o
+    % ajuste inicial é feito em main.tex, após a capa.
+    \pagenumbering{arabic}
+    \aliaspagestyle{chapter}{empty}
+    \pagestyle{empty}
     \aliaspagestyle{cleared}{empty}
     \aliaspagestyle{part}{empty}
 }
 
 % Elementos textuais
 \renewcommand{\textual}{%
-    \pagenumbering{arabic} % Inicia a numeração em 1
+    % Mantém a contagem iniciada nas folhas pré-textuais, apenas tornando
+    % o número visível a partir da primeira página textual.
     \ifthenelse{\equal{\ABNTEXisarticle}{true}}{%
         \pagestyle{plain}
     }
@@ -215,8 +211,8 @@
 % SUMÁRIO
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Travessão no sumário para apêndices e anexos
-\renewcommand{\cftchapteraftersnum}{\hfill\textendash\hfill}
+% Espaço entre o número e o título, sem travessão.
+\renewcommand{\cftchapteraftersnum}{\hspace{1em}}
 
 % Insere espaço entre os itens do sumário de diferentes capítulos
 \setlength{\cftbeforechapterskip}{1.0em \@plus\p@}

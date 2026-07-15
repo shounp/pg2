@@ -5,88 +5,144 @@
 \chapter{Resultados experimentais}
 \label{cap:resultados}
 
-Este capítulo apresenta a análise quantitativa dos ensaios realizados com o protótipo RFID UHF. A montagem avaliada foi composta pelo módulo YPD-R200, antena Airplux APCA8090 de 5~dBi, etiqueta Avery Dennison Smartrac AD-239 M730 e Arduino como unidade de controle e aquisição. Os dados foram organizados na planilha de coleta e processados para obter métricas de alcance, orientação, material de fixação, inventário de sala e detecção de passagem.
+Este capítulo apresenta os resultados obtidos na campanha de medições. Todos os percentuais, tempos e valores de RSSI bruto descritos a seguir foram calculados a partir dos dados coletados; nenhum deles foi estimado por cálculo teórico.
 
-O objetivo da análise não é demonstrar apenas uma leitura isolada, mas verificar se o conjunto pode apoiar inventário patrimonial em condições controladas. Por isso, as métricas foram organizadas em torno de cinco perguntas: qual a taxa de leitura em função da distância, como a altura relativa entre antena e tag interfere, qual o impacto da orientação da etiqueta, como o material de fixação afeta a leitura e qual a cobertura obtida em uma janela de inventário.
-
-\section{Base de dados analisada}
-
-A base analisada corresponde a um cenário interno de laboratório, com antena posicionada a 150~cm de altura, módulo YPD-R200 configurado para potência nominal de 26~dBm, antena APCA8090 de 5~dBi e etiquetas AD-239 M730. As leituras foram registradas por altura da tag, distância em relação à antena, orientação, material de fixação, janelas de inventário em sala e passagem por ponto fixo.
-
-A taxa de sucesso usada nas tabelas e gráficos foi calculada pela relação entre leituras válidas e tentativas totais. Para inventário, a cobertura foi calculada pela relação entre a quantidade de EPCs distintos detectados e a população conhecida de tags presentes na janela. Esses indicadores permitem avaliar o comportamento do protótipo de forma mais rigorosa do que uma simples confirmação de leitura.
+O objetivo é discutir o comportamento observado do conjunto formado por YPD-R200, APCA8090 e AD-239 M730, verificar as métricas propostas e destacar as condições que mais afetaram a leitura. Os níveis de RSSI foram preservados apenas como indicador relativo do leitor, pois não houve calibração para dBm.
 
 \input{./05-tabelas/resultados_rfid_gerados}
 
-\section{Alcance em função da distância}
+\section{Distância horizontal}
 
-A \autoref{tab:resultado-alcance-distancia} sintetiza a queda observada da taxa de leitura com o aumento da distância. Nos dados experimentais, a taxa média permanece acima de 90\% até 1,5~m, cai para 83,6\% em 2~m e passa a degradar com maior intensidade a partir de 2,5~m. Esse comportamento confirma a distinção discutida na fundamentação: o alcance operacional de inventário deve ser definido pela repetibilidade da leitura, e não pela maior distância em que uma tag responde ocasionalmente.
+A \autoref{tab:resultado-alcance-distancia} mostra que a taxa de leitura foi de 100,0\% a 0,5~m, 73,3\% a 1,0~m, 66,7\% a 1,5~m e 53,3\% a 2,0~m. Os respectivos intervalos de confiança de 95\% foram de 79,6\% a 100,0\%, de 48,0\% a 89,1\%, de 41,7\% a 84,8\% e de 30,1\% a 75,2\%. A tendência observada é de queda com a distância, mas a amplitude dos intervalos evidencia a incerteza decorrente das 15 tentativas por condição.
+
+\TabelaAlcanceDistancia
+
+A \autoref{fig:resultado-alcance-distancia} representa graficamente as taxas e os intervalos da \autoref{tab:resultado-alcance-distancia} nos quatro níveis efetivamente ensaiados.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.82\textwidth]{./04-figuras/resultado_alcance_distancia}
-    \caption{Taxa média experimental de leitura em função da distância entre antena e etiqueta.}
+    \caption{Taxa experimental de leitura em função da distância horizontal; as barras de erro representam o IC 95\% de Wilson.}
     \label{fig:resultado-alcance-distancia}
+    \includegraphics[width=0.82\textwidth]{./04-figuras/resultado_alcance_distancia}
+    \fonte{Elaborado pelo autor a partir dos dados experimentais (2026).}
 \end{figure}
 
-A \autoref{fig:resultado-alcance-distancia} mostra também a variação entre alturas de tag para cada distância. A faixa sombreada indica que duas etiquetas posicionadas à mesma distância horizontal podem apresentar desempenhos diferentes se estiverem em alturas distintas. Esse efeito justifica registrar a altura durante os ensaios e durante o uso prático, especialmente porque o leitor portátil será usado em salas com bens posicionados em mesas, prateleiras, armários e equipamentos de diferentes dimensões.
+\FloatBarrier
+
+Adotando 90\% como limiar diagnóstico de repetibilidade por condição, apenas o ponto de 0,5~m atingiu o critério nesta campanha. Como a próxima distância ensaiada foi 1,0~m, os dados não permitem localizar com precisão o limite entre esses dois pontos. Esse limiar não constitui aceitação operacional para o inventário, pois detectar 90\% das tentativas ou dos bens ainda deixa omissões. Para uma passagem pela sala, o requisito adotado é identificar todos os EPCs esperados na mesma rodada.
+
+Na \autoref{tab:resultado-alcance-distancia}, o tempo médio até a primeira leitura, calculado somente entre tentativas com detecção, cresce com a distância: $0{,}020 \pm 0{,}003$~s a 0,5~m, $0{,}206 \pm 0{,}338$~s a 1,0~m, $0{,}596 \pm 0{,}726$~s a 1,5~m e $0{,}773 \pm 0{,}846$~s a 2,0~m. A dispersão elevada nos três últimos pontos mostra que a média temporal deve ser interpretada com cautela; tentativas sem detecção não entram nesse cálculo e já são representadas pela taxa de sucesso. As médias de RSSI bruto também não variaram de forma monotônica com a distância. Como o RSSI não foi calibrado e o multipercurso integrou o cenário realista sem ser medido separadamente, esses valores descrevem apenas o comportamento relativo observado; eles não podem ser convertidos para potência em dBm nem utilizados para isolar causalmente os mecanismos de propagação. Além disso, TAG1, TAG2 e TAG3 permaneceram associadas, respectivamente, a papelão, madeira e plástico. Como os mesmos três conjuntos foram usados em todas as distâncias, a comparação agregada entre distâncias conserva a composição do painel, mas uma diferença individual não pode ser atribuída somente à etiqueta.
+
+\section{Orientação}
+
+A \autoref{tab:resultado-orientacao} mostra que o conjunto obteve 93,3\% de leitura em 0$^\circ$, 86,7\% em 45$^\circ$ e 66,7\% em 90$^\circ$, sempre a 1,5~m. Os intervalos de confiança de 95\% foram, respectivamente, de 70,2\% a 98,8\%, de 62,1\% a 96,3\% e de 41,7\% a 84,8\%. A tendência monotônica é compatível com a perda de acoplamento por desalinhamento entre polarizações lineares. Em um cenário institucional fechado, o multipercurso faz parte das condições normais de operação. Como os intervalos se sobrepõem e esse efeito não foi medido separadamente, os dados não permitem atribuir toda a diferença exclusivamente ao ângulo. Os três conjuntos formados por etiqueta e suporte aparecem em todos os ângulos, mas a associação fixa entre exemplar e suporte permanece como fator de confusão na análise individual.
+
+\TabelaOrientacao
+
+A \autoref{fig:resultado-orientacao} permite comparar visualmente a tendência entre os três ângulos, preservando a amplitude dos intervalos de confiança.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.82\textwidth]{./04-figuras/resultado_alcance_altura_2m}
-    \caption{Taxa experimental de leitura a 2~m para diferentes alturas da etiqueta.}
-    \label{fig:resultado-alcance-altura}
-\end{figure}
-
-A \autoref{fig:resultado-alcance-altura} isola a distância de 2~m e evidencia a influência da altura da tag quando a antena está a 150~cm. Essa visualização é útil para o cenário de inventário portátil, pois aproxima o teste de uma situação real: o operador mantém o leitor em determinada altura enquanto os bens estão distribuídos verticalmente no ambiente.
-
-\section{Orientação e material de fixação}
-
-A antena APCA8090 possui polarização linear, logo a orientação da etiqueta em relação ao campo irradiado é uma variável crítica. Nos dados experimentais, a orientação alinhada a $0^\circ$ apresenta taxa média de 84,2\%, enquanto $45^\circ$ reduz a taxa média para 54,2\% e $90^\circ$ para 10,9\%. Esse resultado reforça que uma falha de leitura não deve ser atribuída automaticamente à distância: a polarização e o posicionamento físico da tag podem ser determinantes.
-
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.70\textwidth]{./04-figuras/resultado_orientacao}
-    \caption{Influência experimental da orientação da etiqueta na taxa de leitura.}
+    \caption{Taxa experimental de leitura nas orientações testadas a 1,5~m; as barras de erro representam o IC 95\% de Wilson.}
     \label{fig:resultado-orientacao}
+    \includegraphics[width=0.70\textwidth]{./04-figuras/resultado_orientacao}
+    \fonte{Elaborado pelo autor a partir dos dados experimentais (2026).}
 \end{figure}
 
-O material de fixação também altera a resposta da etiqueta. A \autoref{tab:resultado-material} mostra taxas altas para papelão, madeira e plástico, redução em vidro e forte degradação quando a tag é aplicada diretamente sobre metal. Esse comportamento é especialmente relevante para inventário patrimonial, pois muitos bens institucionais são metálicos ou possuem carcaças metálicas. Para esses casos, a solução prática deve considerar espaçadores, etiquetas específicas para metal ou outro ponto de fixação no bem.
+A análise complementar por conjunto formado por etiqueta e suporte é apresentada na \autoref{tab:resultado-por-tag}.
+
+\TabelaPorEtiqueta
+
+\FloatBarrier
+
+A \autoref{tab:resultado-por-tag} apresenta uma verificação complementar por conjunto. No ensaio de distância, TAG1 com papelão, TAG2 com madeira e TAG3 com plástico obtiveram, respectivamente, 75,0\%, 85,0\% e 60,0\%; no ensaio de orientação, as taxas foram 86,7\%, 86,7\% e 73,3\%. Essa variação descreve os conjuntos efetivamente usados, mas não permite concluir que uma etiqueta, madeira ou plástico foi responsável pela diferença, pois exemplar e suporte não foram variados independentemente.
+
+\section{Ensaio complementar com uma etiqueta isolada}
+
+A \autoref{tab:resultado-ensaio-uma-tag} reúne o ensaio complementar com uma única etiqueta na zona de leitura. Em 1,0~m, as taxas foram 100,0\%, 86,7\% e 60,0\% para 0$^\circ$, 45$^\circ$ e 90$^\circ$. Em 2,0~m, os valores caíram para 90,0\%, 70,0\% e 36,7\%. Em 5,0~m, não houve detecção nas 30 tentativas de cada orientação. Os intervalos de Wilson permanecem apresentados porque, mesmo com 30 tentativas por combinação, as proporções não constituem valores exatos da população.
+
+\TabelaEnsaioUmaTag
+
+O bloco complementar evidencia uma interação prática entre distância e orientação: o alinhamento de 0$^\circ$ preservou desempenho elevado em 1,0 e 2,0~m, enquanto o desalinhamento reduziu a repetibilidade, e 5,0~m ficou fora do alcance útil nas condições observadas. Como essas falhas ocorreram com apenas uma etiqueta respondendo, colisões entre tags não são necessárias para explicar parte das omissões. O multipercurso, o limiar de energização da tag, a polarização, a aquisição serial e outras fontes de variabilidade ainda podem atuar. O ensaio não quantifica a contribuição de colisões no inventário; isso exigiria comparar, na mesma geometria e sob o mesmo protocolo, cada etiqueta isolada e as mesmas etiquetas presentes simultaneamente.
+
+Os registros desse bloco foram preservados apenas como contagens consolidadas. Eles não contêm RSSI, tempos individuais, ordem das tentativas ou diagnósticos seriais suficientes para combinação com os demais ensaios. Por essa razão, a matriz complementa a interpretação de distância e orientação, mas não altera as estatísticas das tabelas anteriores.
+
+\FloatBarrier
+
+\section{Material de fixação}
+
+Na \autoref{tab:resultado-material}, papelão e metal com espaçador plástico de 10~mm apresentaram 100,0\% de leitura, enquanto o metal direto resultou em 0,0\%. Como houve apenas cinco tentativas e um único exemplar de tag por condição, os intervalos de 95\% ainda são amplos: de 56,6\% a 100,0\% nos dois casos de sucesso integral e de 0,0\% a 43,4\% no metal direto.
+
+\TabelaMaterial
+
+A \autoref{fig:resultado-material} destaca o contraste entre o contato metálico direto e as duas condições nas quais houve detecção.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.82\textwidth]{./04-figuras/resultado_material}
-    \caption{Taxa experimental de leitura para diferentes materiais de fixação.}
+    \caption{Taxa experimental de leitura para os materiais de fixação testados; as barras de erro representam o IC 95\% de Wilson.}
     \label{fig:resultado-material}
+    \includegraphics[width=0.82\textwidth]{./04-figuras/resultado_material}
+    \fonte{Elaborado pelo autor a partir dos dados experimentais (2026).}
 \end{figure}
 
-\section{Inventário de sala}
+\FloatBarrier
 
-O ensaio de inventário em sala representa o caso principal do TCC. A métrica mais importante não é o número bruto de leituras, mas a recuperação dos EPCs distintos esperados. Nos dados coletados, dez tags estavam presentes por janela e a cobertura média foi de 91,0\%, com variação de 80,0\% a 100,0\%. Apenas três das dez rodadas atingiram cobertura completa.
+O espaçador de 10~mm recuperou a leitura nas cinco tentativas realizadas, fornecendo evidência favorável à separação física nessa montagem. O resultado não permite definir 10~mm como espessura ótima nem substituir a validação com etiquetas próprias para metal. Para a prática patrimonial, ele indica que bens metálicos exigem etiqueta adequada ou suporte auxiliar previamente testado.
+
+\section{Inventário em sala}
+
+O inventário em sala apresentou cobertura de 80\% nas rodadas 1 a 4 e de 60\% na rodada 5, com média de 76,0\%, desvio-padrão de 8,9 pontos percentuais e IC 95\% da média de 64,9\% a 87,1\%. Nenhuma das cinco rodadas foi completa. Portanto, a taxa observada de inventários completos foi de 0,0\%, com IC 95\% de Wilson de 0,0\% a 43,4\%. O intervalo da cobertura média informa quantas etiquetas foram encontradas, em média, e não a chance de concluir a conferência. A taxa de rodadas completas é a métrica diretamente relacionada ao requisito de identificar todos os bens em uma passagem. As tags foram avaliadas ao longo de um percurso curto padronizado em laboratório fechado de aproximadamente 50~m$^2$, configuração compatível com uma operação cotidiana de inventário institucional. Como dimensões lineares, coordenadas individuais e trajeto exato não foram registrados, não é possível reproduzir integralmente a geometria, mas essa ausência não descaracteriza a avaliação do desempenho agregado no cenário de uso. A \autoref{tab:resultado-inventario-rodadas} detalha cada rodada e a \autoref{tab:resultado-inventario} reúne os indicadores consolidados.
+
+\TabelaInventarioRodadas
+\TabelaInventarioResumo
+
+A \autoref{fig:resultado-inventario} mostra a estabilidade das quatro primeiras rodadas e a redução observada na quinta.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.82\textwidth]{./04-figuras/resultado_inventario}
-    \caption{Cobertura experimental por rodada de inventário em sala.}
+    \caption{Cobertura por rodada no inventário experimental em sala.}
     \label{fig:resultado-inventario}
+    \includegraphics[width=0.82\textwidth]{./04-figuras/resultado_inventario}
+    \fonte{Elaborado pelo autor a partir dos dados experimentais (2026).}
 \end{figure}
 
-A \autoref{fig:resultado-inventario} indica por que o tratamento de duplicatas é obrigatório no Arduino. A planilha registrou média de 45,2 leituras duplicadas por janela, apesar de haver apenas dez tags distintas. Portanto, contar quadros recebidos não equivale a contar bens. O firmware deve acumular EPCs únicos dentro da janela de inventário, ignorar repetições e somente então calcular a cobertura do ambiente.
+\FloatBarrier
 
-\section{Ponto fixo de passagem}
+A ausência de rodadas completas mostra que, em ambiente comum e com apenas uma antena, a cobertura média não basta para garantir inventário completo. O IC da taxa de rodadas completas é amplo devido às cinco rodadas e não demonstra que a probabilidade real seja exatamente zero. Ainda assim, nenhuma execução satisfez o requisito, de modo que os dados não sustentam o uso da configuração atual como referência operacional. Foram registrados 73 quadros válidos: 19 correspondem às detecções distintas somadas entre as rodadas e 54 foram repetições de EPC já visto na mesma janela. Não houve leitura externa nas cinco rodadas oficiais. O firmware deduplicou esses quadros antes de calcular a cobertura, conforme definido na metodologia. A presença aproximada de cinco pessoas e quatro objetos metálicos próximos caracteriza uma condição usual de laboratório e aumenta a representatividade prática do ensaio. Como esses elementos não foram variados independentemente, os resultados descrevem o desempenho do conjunto no cenário completo, e não o efeito isolado de cada componente ambiental.
 
-O uso em ponto fixo foi analisado como extensão do leitor portátil. Nos dados coletados, a taxa média de detecção em passagem foi de 91,0\% a 0,5~m, 86,3\% a 1~m, 71,3\% a 1,5~m e 41,3\% a 2~m. Esse resultado indica que um ponto fixo tende a exigir zona de leitura mais curta e controlada do que o inventário portátil.
+As cinco etiquetas formavam a etapa inicial de uma progressão planejada até aproximadamente 50 unidades. Como a cobertura integral não ocorreu sequer nessa etapa, aumentar a população não permitiria corrigir a limitação física já observada. O escalonamento foi interrompido para priorizar a revisão de antena, etiquetas, geometria e configuração do leitor. Essa decisão não estabelece que cinco seja a capacidade máxima do YPD-R200; a capacidade de inventário do protocolo não foi medida, pois o critério mínimo de desempenho da montagem falhou antes do teste de escala.
 
-\begin{figure}[htbp]
+\section{Integridade da aquisição}
+
+Após as medições, verificou-se que a alternância entre a fonte externa de 5~V/1~A e a alimentação pela conexão USB do Arduino não produziu alteração relevante nos resultados obtidos.
+
+Os registros diagnósticos coletados permitem avaliar a aquisição sem atribuir automaticamente toda falha à interface de RF. Nas 693 consultas dos ensaios principais de distância, orientação e material, ocorreram 21 quadros inválidos (3,0\%), 9 \textit{timeouts} (1,3\%) e nenhum erro de comando. No inventário, foram 251 consultas, 5 quadros inválidos (2,0\%), 2 \textit{timeouts} (0,8\%) e nenhum estouro da tabela de EPCs. O ensaio complementar de uma etiqueta não integra essas contagens, pois seus registros foram preservados apenas de forma agregada. Esses percentuais são diagnósticos do programa, e não uma taxa de erro de enquadramento da UART: sem analisador lógico, não é possível distinguir completamente corrupção em \texttt{SoftwareSerial}, resposta malformada do módulo e efeitos do enlace entre leitor e tag.
+
+\section{Síntese da discussão}
+
+Os resultados sustentam as três tendências principais da hipótese: a repetibilidade caiu com a distância, o contato direto com metal impediu a detecção da etiqueta convencional e a taxa diminuiu com o aumento do desalinhamento angular. O ensaio de etiqueta isolada mostra que existem falhas sem disputa simultânea entre tags, de modo que colisão não pode ser tratada como explicação exclusiva para o inventário incompleto. A campanha não separou estatisticamente polarização, multipercurso, suporte, exemplar, serial e anticolisão. Os dados também mostram que o inventário com cinco tags não fechou nenhuma janela, reforçando a necessidade de acumular EPCs únicos, registrar omissões e melhorar a configuração física antes de aumentar a escala.
+
+Em termos de escolha de antena, a APCA8090 linear permitiu estabelecer uma linha de base experimental de baixo custo, mas a configuração não atingiu o requisito operacional. Para tratar diretamente a sensibilidade à orientação, a comparação futura prioritária é com polarização circular ou diversidade de polarização. Uma antena omnidirecional constitui hipótese separada para ampliar a cobertura azimutal e reduzir o esforço de apontamento; ela não corrige por si só o desalinhamento de polarização e pode elevar leituras externas e multipercurso. Bens metálicos também exigem comparar o espaçador com etiquetas próprias para metal.
+
+\section{Requisitos derivados para evolução do protótipo}
+
+Os requisitos da \autoref{tab:requisitos-evolucao} são derivados da campanha. A coluna relativa ao ponto fixo apresenta especificações para trabalho futuro, e não resultados experimentais, pois não houve ensaio de passagem em portal ou zona fixa.
+
+\begin{table}[H]
     \centering
-    \includegraphics[width=0.82\textwidth]{./04-figuras/resultado_passagem}
-    \caption{Taxa experimental de detecção de passagem em função da distância lateral.}
-    \label{fig:resultado-passagem}
-\end{figure}
-
-Mesmo com detecção da passagem, a arquitetura com apenas uma zona de leitura não determina o sentido do movimento. Para afirmar entrada ou saída, seriam necessárias duas zonas sequenciais, duas antenas, diferença temporal entre leituras ou outro mecanismo de contexto. Por isso, neste TCC, o ponto fixo deve ser tratado como detecção de presença ou passagem, não como controle completo de direção.
-
-\section{Discussão}
-
-Os resultados obtidos estabelecem critérios práticos para o uso do protótipo. O primeiro critério é separar distância máxima de alcance operacional: uma leitura eventual a 3~m ou 4~m não caracteriza inventário confiável se a taxa de recuperação for baixa. O segundo é controlar orientação e material, pois essas variáveis causaram perdas relevantes. O terceiro é validar a janela de inventário por EPCs únicos, e não por quantidade de quadros recebidos.
-
-A partir dos valores coletados, o conjunto avaliado mostrou desempenho mais consistente em curtas distâncias, especialmente até 1,5~m. Em 2~m, a taxa média ainda foi significativa, mas já apresentou queda suficiente para exigir cuidado no uso operacional. Distâncias acima de 2,5~m não devem ser tratadas como alcance confiável de inventário na configuração ensaiada. Para melhorar esse resultado, os pontos mais prováveis de ajuste são alimentação, UART, orientação da antena, potência configurada, espaçadores para objetos metálicos e posicionamento físico das tags.
+    \caption{Requisitos derivados dos resultados para os cenários portátil e fixo.}
+    \label{tab:requisitos-evolucao}
+    \footnotesize
+    \begin{tabularx}{\textwidth}{p{3.0cm}X X}
+        \toprule
+        \textbf{Aspecto} & \textbf{Leitor portátil} & \textbf{Ponto fixo} \\
+        \midrule
+        Zona de leitura & Procedimento deve aproximar a antena das tags e exigir cobertura integral por passagem; 90\% por condição é insuficiente para aceitação. & Cobertura deve ser confinada para reduzir leituras de áreas adjacentes e validada na geometria real da passagem. \\
+        Antena e etiquetas & Comparar a APCA8090 com polarização circular ou diversa, avaliar cobertura azimutal e usar tags próprias para metal quando necessário. & Preferir cobertura controlada; inferência de direção exige duas zonas, duas antenas ou sensor auxiliar. \\
+        Eletrônica & Usar UART de hardware, confirmar adequação de nível lógico e dimensionar alimentação para o pico do leitor. & Registrar canal/região, potência efetiva e estabilidade em operação prolongada. \\
+        Software & Persistir EPC, instante, ambiente e estado da janela; deduplicar antes de calcular cobertura. & Correlacionar eventos por zona e tempo, sem classificar presença isolada como entrada ou saída. \\
+        Validação & Após melhorar a configuração, exigir rodadas completas com cinco tags e somente então ampliar gradualmente a população até aproximadamente 50, em mais sessões e ambientes. & Medir leituras externas, omissões e falsos eventos em percursos nos dois sentidos. \\
+        \bottomrule
+    \end{tabularx}
+    \fonte{Elaborado pelo autor a partir dos resultados da campanha (2026).}
+\end{table}

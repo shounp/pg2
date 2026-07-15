@@ -5,15 +5,15 @@
 \chapter{Trabalhos relacionados}
 \label{cap:trabalhos-relacionados}
 
-Este capítulo compara estudos que empregam RFID UHF em inventário, rastreamento de equipamentos e pontos de passagem. O objetivo não é reproduzir arquiteturas completas de software, mas identificar quais aspectos devem ser avaliados no protótipo de leitura.
+Este capítulo compara estudos que empregam RFID UHF em inventário, rastreamento de equipamentos e pontos de passagem. O objetivo não é reproduzir arquiteturas completas de software, mas identificar quais aspectos devem ser considerados na análise experimental e posteriormente avaliados no protótipo físico.
 
 \section{Inventário e rastreamento de ativos}
 
 \citeonline{chen2022inventory} desenvolveram um sistema de inventário baseado em RFID que integra identificação dos itens e gerenciamento dos registros. O trabalho demonstra que o benefício operacional depende da ligação entre a leitura física e a informação de inventário. Para o presente TCC, essa arquitetura representa o sistema no qual o protótipo poderá ser inserido, mas a camada de aplicação permanece fora do escopo.
 
-\citeonline{ibrahim2018lab} apresentaram uma solução de baixo custo para identificação e rastreamento de equipamentos de laboratório com IoT e RFID UHF. A proximidade com o ambiente educacional torna esse trabalho particularmente relevante. A diferença está no recorte: aqui se busca caracterizar leitor, antena, tags e aquisição serial antes de integrar serviços de rede.
+\citeonline{ibrahim2018lab} apresentou uma solução de baixo custo para identificação e rastreamento de equipamentos de laboratório com IoT e RFID UHF. Por tratar de equipamentos de laboratório com hardware acessível, esse trabalho é o mais próximo, em finalidade institucional, do cenário de inventário patrimonial universitário abordado aqui. A diferença está no recorte: o presente estudo caracteriza leitor, antena, tags e aquisição serial antes de integrar serviços de rede.
 
-\citeonline{iorga2026} analisaram inventário automático de componentes utilizando RFID UHF. O estudo reforça a adequação da leitura sem linha de visada e da identificação em lote, mas também evidencia que configuração física e procedimento de leitura devem ser ajustados à geometria dos itens e do ambiente.
+\citeonline{iorga2026} avaliaram o emprego de RFID UHF no inventário automático de componentes por meio de uma bancada com coordenadas definidas. O protocolo mapeou o campo de leitura e examinou histerese, distância, orientação e configurações com uma ou mais tags. Esse controle geométrico é adequado à caracterização espacial do campo. A presente campanha adotou um recorte complementar: observar o desempenho operacional em uma sala institucional comum, sem coordenadas espaciais completas. Essa escolha aproxima o ensaio da aplicação pretendida, embora não permita reproduzir exatamente a geometria nem mapear o canal ponto a ponto.
 
 \section{Arquiteturas centralizadas e segurança}
 
@@ -21,7 +21,7 @@ Este capítulo compara estudos que empregam RFID UHF em inventário, rastreament
 
 \section{Cobertura e pontos de passagem}
 
-\citeonline{sabesan2014diversity} mostraram que diversidade de antenas, fase e frequência pode reduzir nulos de multipercurso em áreas amplas. A justificativa física adotada pelos autores é diretamente relacionada ao presente trabalho: em ambiente interno, a etiqueta pode receber uma componente dominante de linha de visada combinada com reflexões em paredes, piso, teto, mobiliário e equipamentos, caracterizando um canal com desvanecimento Rician. Esse resultado é relevante para interpretar falhas de leitura dentro da região nominal de cobertura e para justificar ensaios com variação de distância, altura e orientação. A solução completa dos autores, entretanto, utiliza múltiplas antenas e supera a capacidade direta do YPD-R200 de uma porta.
+\citeonline{sabesan2014diversity} mostraram que diversidade de antenas, fase e frequência pode reduzir nulos de multipercurso em áreas amplas. Esse resultado é relevante para salas com superfícies refletoras, mas a solução utiliza múltiplas antenas e supera a capacidade direta do YPD-R200 de uma porta.
 
 Para detectar sentido de deslocamento, \citeonline{wang2022rfaccess} utilizaram duas antenas e um modelo temporal. O trabalho confirma que a identificação de uma tag em uma porta e a inferência de entrada ou saída são problemas distintos. No presente projeto, pontos fixos são discutidos como extensão e não como funcionalidade já entregue pelo protótipo de uma antena.
 
@@ -31,20 +31,27 @@ A \autoref{tab:trabalhos-relacionados} sintetiza a relação dos estudos com est
 
 \begin{table}[htbp]
     \centering
-    \footnotesize
-    \begin{tabularx}{\textwidth}{p{3.0cm}p{3.2cm}p{3.2cm}X}
-        \toprule
-        \textbf{Trabalho} & \textbf{Aplicação} & \textbf{Ênfase} & \textbf{Relação com este TCC} \\
-        \midrule
-        \citeonline{chen2022inventory} & Inventário & Sistema integrado & Representa a camada de aplicação futura, não implementada neste protótipo. \\
-        \citeonline{ibrahim2018lab} & Equipamentos de laboratório & Baixo custo e IoT & Aproxima-se do ambiente institucional e justifica a escolha de hardware acessível. \\
-        \citeonline{iorga2026} & Inventário automático & Processo e disposição física & Reforça a necessidade de avaliar geometria, orientação e cobertura. \\
-        \citeonline{sabesan2014diversity} & Cobertura UHF ampla & Multipercurso e diversidade & Fundamenta a análise de nulos de cobertura e a limitação de uma única antena em ambientes internos. \\
-        \citeonline{wang2022rfaccess} & Controle de passagem & Direção com duas antenas & Demonstra os requisitos adicionais para distinguir entrada e saída. \\
-        \bottomrule
-    \end{tabularx}
     \caption{Comparação entre trabalhos relacionados e o protótipo proposto.}
     \label{tab:trabalhos-relacionados}
+    \footnotesize
+    \setlength{\tabcolsep}{3pt}
+    \renewcommand{\arraystretch}{0.96}
+    \begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{2.6cm}>{\raggedright\arraybackslash}p{3.1cm}>{\raggedright\arraybackslash}p{3.0cm}>{\raggedright\arraybackslash}X}
+        \toprule
+        \textbf{Trabalho} & \textbf{Evidência principal} & \textbf{Variáveis ou métricas} & \textbf{Comparabilidade com este TCC} \\
+        \midrule
+        \citeonline{chen2022inventory} & Demonstração de sistema integrado de inventário & Identificação e gestão dos registros & Compara-se quanto à finalidade, mas não isola o enlace entre leitor e tag como feito nesta campanha. \\
+        \citeonline{ibrahim2018lab} & Protótipo de baixo custo em laboratório & Identificação e rastreamento de equipamentos & É próximo no contexto institucional; a integração IoT excede o escopo deste protótipo. \\
+        \citeonline{iorga2026} & Bancada controlada e cinco sequências de teste & Campo de leitura, histerese, distância e orientação & É a referência metodológica mais próxima, embora utilize objetos, trajetória e hardware distintos. \\
+        \citeonline{sabesan2014diversity} & Ensaio de cobertura com diversidade & Ganho de cobertura por antena, fase e frequência & Oferece referência metodológica para multipercurso, mas usa arquitetura multiaxial incompatível com uma única porta. \\
+        \citeonline{wang2022rfaccess} & Experimento de controle de passagem & Sequência temporal em duas antenas & Fundamenta requisitos de direção; não é quantitativamente comparável ao ensaio de presença em uma zona. \\
+        \bottomrule
+    \end{tabularx}
+    \fonte{Elaborado pelo autor a partir das referências citadas (2026).}
 \end{table}
 
-O diferencial deste trabalho não é propor uma nova interface aérea nem um sistema patrimonial completo. A contribuição está em adaptar e avaliar criticamente um leitor YPD-R200 de baixo custo com Arduino, considerando alimentação, comunicação serial, antena APCA8090, etiqueta AD-239 M730 e aquisição de uma população de EPCs. Esse recorte preenche a etapa experimental que deve anteceder a implementação de um sistema de inventário ou de portais fixos.
+Os estudos variam em ambiente, hardware e nível de integração; por isso, seus resultados não devem ser comparados diretamente por percentuais com a campanha deste TCC. A síntese mostra, porém, critérios metodológicos comuns: registrar a geometria, separar cobertura de simples contagem de quadros e distinguir detecção de presença de inferência de direção.
+
+Não foi identificado, entre as referências acadêmicas selecionadas, um estudo revisado por pares que caracterize exatamente a variante YPD-R200, a antena APCA8090 e a etiqueta AD-239 M730 utilizadas aqui. Para o módulo, as fontes específicas disponíveis são o datasheet, o protocolo serial do fabricante e a implementação pública de \mbox{\citeonline{playfultechnology2023r200}}. Como a designação comercial ``R200'' aparece em produtos diferentes, resultados obtidos com outros leitores de mesmo nome não foram tratados como equivalentes. Essa lacuna reforça a contribuição de documentar a configuração do protótipo, o firmware desenvolvido e os resultados experimentais obtidos com o conjunto efetivamente ensaiado.
+
+O diferencial deste trabalho não é propor uma nova interface aérea nem um sistema patrimonial completo. A contribuição está em adaptar o firmware de um leitor YPD-R200 de baixo custo para Arduino e analisar experimentalmente condições relevantes de antena, etiqueta, material e aquisição de EPCs. Esse recorte estrutura hipóteses, métricas e critérios de comparação para uma evolução futura do inventário ou de portais fixos.
