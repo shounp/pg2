@@ -1,63 +1,155 @@
-% Arquivo gerado por gerar_resultados_planilha_rfid.py
-% Nao edite manualmente: atualize a planilha e execute o script novamente.
+% Tabelas elaboradas a partir dos dados experimentais coletados.
+% Os níveis de RSSI são apresentados na unidade bruta informada pelo módulo.
 
+\newcommand{\TabelaAlcanceDistancia}{%
 \begin{table}[htbp]
     \centering
+    \caption{Síntese descritiva das medições por distância horizontal.}
+    \label{tab:resultado-alcance-distancia}
     \small
-    \begin{tabular}{ccccc}
+    \setlength{\tabcolsep}{7pt}
+    \begin{tabular}{cccc}
         \toprule
-        \textbf{Distancia (m)} & \textbf{Ensaios} & \textbf{Taxa media} & \textbf{Faixa} & \textbf{RSSI medio} \\
+        \textbf{\shortstack{Distância\\(m)}} &
+        \textbf{\shortstack{Detecções\\($n/N$)}} &
+        \textbf{\shortstack{Taxa de\\leitura}} &
+        \textbf{IC 95\% de Wilson} \\
         \midrule
-        0,5 & 15 & 93,3\% & 83,3\%--100,0\% & -45,2 \\
-        1,0 & 15 & 93,3\% & 83,3\%--100,0\% & -53,2 \\
-        1,5 & 15 & 90,2\% & 80,0\%--100,0\% & -61,2 \\
-        2,0 & 15 & 83,6\% & 73,3\%--93,3\% & -67,2 \\
-        2,5 & 15 & 70,2\% & 60,0\%--80,0\% & -73,2 \\
-        3,0 & 15 & 50,2\% & 40,0\%--60,0\% & -79,2 \\
-        3,5 & 15 & 20,2\% & 10,0\%--30,0\% & -85,2 \\
-        4,0 & 15 & 2,2\% & 0,0\%--10,0\% & -89,7 \\
+        0,5 & 15/15 & 100,0\% & 79,6\% a 100,0\% \\
+        1,0 & 85/105 & 81,0\% & 72,4\% a 87,3\% \\
+        1,5 & 47/60 & 78,3\% & 66,4\% a 86,9\% \\
+        2,0 & 67/105 & 63,8\% & 54,3\% a 72,4\% \\
+        5,0 & 0/90 & 0,0\% & 0,0\% a 4,1\% \\
         \bottomrule
     \end{tabular}
-    \caption{Resumo dos dados experimentais de alcance por distancia.}
-    \label{tab:resultado-alcance-distancia}
-\end{table}
+    \fonte{Elaborado pelo autor a partir dos dados experimentais (2026).}
+\end{table}%
+}
 
+\newcommand{\TabelaOrientacao}{%
 \begin{table}[htbp]
     \centering
+    \caption{Síntese descritiva das medições por orientação da etiqueta.}
+    \label{tab:resultado-orientacao}
     \small
-    \begin{tabularx}{\textwidth}{Xcccc}
+    \setlength{\tabcolsep}{7pt}
+    \begin{tabular}{cccc}
         \toprule
-        \textbf{Material/suporte} & \textbf{Leituras} & \textbf{Tentativas} & \textbf{Taxa} & \textbf{RSSI medio} \\
+        \textbf{\shortstack{Orientação\\($^\circ$)}} &
+        \textbf{\shortstack{Detecções\\($n/N$)}} &
+        \textbf{\shortstack{Taxa de\\leitura}} &
+        \textbf{IC 95\% de Wilson} \\
         \midrule
-        Papelao & 29 & 30 & 96,7\% & -61,5 \\
-        Madeira & 28 & 30 & 93,3\% & -62,5 \\
-        Plastico & 27 & 30 & 90,0\% & -64,0 \\
-        Vidro & 25 & 30 & 83,3\% & -66,5 \\
-        Metal direto & 3 & 30 & 10,0\% & -88,0 \\
-        Metal com espacador & 12 & 30 & 40,0\% & -78,0 \\
+        0 & 115/165 & 69,7\% & 62,3\% a 76,2\% \\
+        45 & 60/105 & 57,1\% & 47,6\% a 66,2\% \\
+        90 & 39/105 & 37,1\% & 28,5\% a 46,7\% \\
         \bottomrule
-    \end{tabularx}
-    \caption{Efeito medido do material de fixacao da etiqueta na leitura.}
+    \end{tabular}
+    \fonte{Elaborado pelo autor a partir dos dados experimentais (2026).}
+\end{table}%
+}
+
+\newcommand{\TabelaMaterial}{%
+\begin{table}[htbp]
+    \centering
+    \caption{Resultado experimental por material e condição de fixação.}
     \label{tab:resultado-material}
-\end{table}
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \begin{tabular}{lcccc}
+        \toprule
+        \textbf{\shortstack{Material ou condição\\de fixação}} &
+        \textbf{\shortstack{Detecções\\($n/N$)}} &
+        \textbf{\shortstack{Taxa de\\leitura}} &
+        \textbf{IC 95\%} &
+        \textbf{\shortstack{RSSI bruto\\média $\pm$ DP}} \\
+        \midrule
+        Papelão & 5/5 & 100,0\% & 56,6\% a 100,0\% & 183,0 $\pm$ 4,5 \\
+        Plástico & 5/5 & 100,0\% & 56,6\% a 100,0\% & 180,6 $\pm$ 0,9 \\
+        Madeira & 5/5 & 100,0\% & 56,6\% a 100,0\% & 174,4 $\pm$ 6,8 \\
+        Vidro & 3/5 & 60,0\% & 23,1\% a 88,2\% & 181,7 $\pm$ 7,1 \\
+        Metal direto & 0/5 & 0,0\% & 0,0\% a 43,4\% & Sem leitura \\
+        Metal com espaçador & 5/5 & 100,0\% & 56,6\% a 100,0\% & 180,6 $\pm$ 5,9 \\
+        \bottomrule
+    \end{tabular}
+    \fonte{Elaborado pelo autor a partir dos dados experimentais (2026).}
+\end{table}%
+}
 
+\newcommand{\TabelaPorEtiqueta}{%
 \begin{table}[htbp]
     \centering
+    \caption{Desempenho por conjunto formado pela etiqueta e pelo suporte no subconjunto com registros individuais.}
+    \label{tab:resultado-por-tag}
     \small
-    \begin{tabularx}{\textwidth}{Xc}
+    \setlength{\tabcolsep}{4pt}
+    \begin{tabular}{lrrrr}
         \toprule
-        \textbf{Metrica} & \textbf{Valor} \\
+        \textbf{\shortstack{Etiqueta\\e suporte}} &
+        \textbf{\shortstack{Distância\\detecções ($n/N$)}} &
+        \textbf{\shortstack{Taxa de\\leitura}} &
+        \textbf{\shortstack{Orientação\\detecções ($n/N$)}} &
+        \textbf{\shortstack{Taxa de\\leitura}} \\
         \midrule
-        Rodadas analisadas & 10 \\
-        Quantidade de tags por janela & 10 \\
-        Cobertura media & 91,0\% \\
-        Faixa de cobertura & 80,0\% a 100,0\% \\
-        Rodadas com cobertura completa & 3/10 \\
-        Tempo medio ate detectar todas & 5,6~s \\
-        Leituras externas totais & 2 \\
-        Duplicatas medias por janela & 45,2 \\
+        TAG1 (papelão) & 15/20 & 75,0\% & 13/15 & 86,7\% \\
+        TAG2 (madeira) & 17/20 & 85,0\% & 13/15 & 86,7\% \\
+        TAG3 (plástico) & 12/20 & 60,0\% & 11/15 & 73,3\% \\
         \bottomrule
-    \end{tabularx}
-    \caption{Resumo dos dados experimentais do ensaio de inventario em sala.}
+    \end{tabular}
+    \fonte{Elaborado pelo autor a partir dos dados experimentais (2026).}
+\end{table}%
+}
+
+\newcommand{\TabelaInventarioRodadas}{%
+\begin{table}[htbp]
+    \centering
+    \caption{Cobertura por rodada no inventário experimental em sala.}
+    \label{tab:resultado-inventario-rodadas}
+    \small
+    \setlength{\tabcolsep}{6pt}
+    \begin{tabular}{ccccc}
+        \toprule
+        \textbf{Rodada} &
+        \textbf{\shortstack{Etiquetas\\detectadas}} &
+        \textbf{Cobertura} &
+        \textbf{\shortstack{Rodada\\completa}} &
+        \textbf{\shortstack{Leituras\\externas}} \\
+        \midrule
+        1 & 4 & 80,0\% & Não & 0 \\
+        2 & 4 & 80,0\% & Não & 0 \\
+        3 & 4 & 80,0\% & Não & 0 \\
+        4 & 4 & 80,0\% & Não & 0 \\
+        5 & 3 & 60,0\% & Não & 0 \\
+        \bottomrule
+    \end{tabular}
+    \fonte{Elaborado pelo autor a partir dos dados experimentais (2026).}
+\end{table}%
+}
+
+\newcommand{\TabelaInventarioResumo}{%
+\begin{table}[htbp]
+    \centering
+    \caption{Resumo do inventário experimental.}
     \label{tab:resultado-inventario}
-\end{table}
+    \small
+    \begin{tabular}{p{6.2cm}r}
+        \toprule
+        \textbf{Métrica} & \textbf{Valor} \\
+        \midrule
+        Rodadas analisadas & 5 \\
+        Etiquetas presentes por rodada & 5 \\
+        Cobertura média & 76,0\% \\
+        Desvio-padrão da cobertura & 8,9 pontos percentuais \\
+        IC 95\% da cobertura média & 64,9\% a 87,1\% \\
+        Faixa de cobertura & 60,0\% a 80,0\% \\
+        Taxa de rodadas completas & 0/5 = 0,0\% \\
+        IC 95\% da taxa de rodadas completas & 0,0\% a 43,4\% \\
+        Leituras externas totais & 0 \\
+        Leituras repetidas totais & 54 \\
+        Leituras repetidas médias por rodada & 10,8 \\
+        Leituras válidas médias por rodada & 14,6 \\
+        \bottomrule
+    \end{tabular}
+    \fonte{Elaborado pelo autor a partir dos dados experimentais (2026).}
+\end{table}%
+}

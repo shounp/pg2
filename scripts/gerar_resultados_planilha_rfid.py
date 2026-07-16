@@ -1,0 +1,1115 @@
+#!/usr/bin/env python3
+"""Consolida a planilha experimental do protótipo RFID UHF.
+
+O script integra as medições de distância e orientação no nível de registro
+realmente preservado: tentativas individuais nas abas originais e contagens
+por combinação na aba Distancia_Orientacao. As condições são consolidadas por
+célula de distância e ângulo, sem fabricar registros individuais para contagens
+agregadas. Os valores de RSSI permanecem restritos ao subconjunto que possui
+diagnóstico serial e não são convertidos para dBm.
+"""
+
+from __future__ import annotations
+
+import argparse
+import re
+import sys
+import unicodedata
+from collections import defaultdict
+from math import sqrt
+from pathlib import Path
+from statistics import mean, stdev
+
+from openpyxl import load_workbook
+
+
+ROOT = Path(__file__).resolve().parents[1]
+WORKBOOK = ROOT / "planilha_coleta_rfid_uhf_experimento.xlsx"
+TABLE_OUTPUT = ROOT / "05-tabelas" / "resultados_rfid_gerados.tex"
+FIGURE_DIR = ROOT / "04-figuras"
+TABLE_SOURCE = "Elaborado pelo autor a partir dos dados experimentais (2026)."
+MATERIAL_LABELS = {
+    "Papelao": "Papelão",
+    "Plastico": "Plástico",
+    "Madeira": "Madeira",
+    "Vidro": "Vidro",
+    "Metal direto": "Metal direto",
+    "Metal com espacador": "Metal com espaçador",
+}
+MATERIAL_ALIASES = {
+    "papelao": "Papelao",
+    "plastico": "Plastico",
+    "madeira": "Madeira",
+    "vidro": "Vidro",
+    "metal direto": "Metal direto",
+    "metal com espacador": "Metal com espacador",
+}
+MATERIAL_ORDER = tuple(MATERIAL_LABELS)
+TAG_SUPPORT_LABELS = {
+    "TAG1": "TAG1 (papelão)",
+    "TAG2": "TAG2 (madeira)",
+    "TAG3": "TAG3 (plástico)",
+}
+
+
+def rows_as_dicts(workbook, sheet_name: str) -> list[dict[str, object]]:
+    sheet = workbook[sheet_name]
+    values = list(sheet.iter_rows(values_only=True))
+    headers = [str(value) for value in values[0]]
+    return [
+        dict(zip(headers, row, strict=True))
+        for row in values[1:]
+        if any(value is not None for value in row)
+    ]
+
+
+def deduplicate_distance_rows(
+    rows: list[dict[str, object]],
+) -> list[dict[str, object]]:
+    """Remove repetições idênticas sem tratá-las como novas tentativas.
+
+    A chave experimental é formada por distância, etiqueta e tentativa. O campo
+    ``ordem`` é apenas um identificador de linha e, por isso, não integra a
+    comparação dos resultados medidos. Se duas linhas com a mesma chave
+    divergirem em qualquer outro campo, a consolidação é interrompida para
+    impedir a escolha arbitrária de uma das observações.
+    """
+    unique_by_key: dict[
+        tuple[float, str, int], dict[str, object]
+    ] = {}
+    deduplicated: list[dict[str, object]] = []
+    discarded = 0
+
+    for row in rows:
+        key = (
+            float(row["distancia_horizontal_m"]),
+            str(row["tag_id"]),
+            int(row["tentativa"]),
+        )
+        if key not in unique_by_key:
+            unique_by_key[key] = row
+            deduplicated.append(row)
+            continue
+
+        previous = unique_by_key[key]
+        fields = (set(previous) | set(row)) - {"ordem"}
+        divergent_fields = sorted(
+            field for field in fields if previous.get(field) != row.get(field)
+        )
+        if divergent_fields:
+            field_text = ", ".join(divergent_fields)
+            raise ValueError(
+                "linhas com a mesma chave experimental divergem: "
+                f"distância={key[0]:g} m, etiqueta={key[1]}, "
+                f"tentativa={key[2]}; campos: {field_text}"
+            )
+        discarded += 1
+
+    if discarded:
+        print(
+            "aviso: "
+            f"{discarded} linhas duplicadas exatas do ensaio de distância "
+            "foram descartadas e não aumentaram o número de tentativas.",
+            file=sys.stderr,
+        )
+    return deduplicated
+
+
+def select_official_material_rows(
+    rows: list[dict[str, object]],
+) -> list[dict[str, object]]:
+    """Normaliza e valida as seis condições do ensaio de material."""
+    selected: list[dict[str, object]] = []
+    unknown: dict[str, int] = defaultdict(int)
+
+    for row in rows:
+        source_label = str(row["material_suporte"]).strip()
+        decomposed = unicodedata.normalize("NFKD", source_label)
+        normalized_label = "".join(
+            character
+            for character in decomposed
+            if not unicodedata.combining(character)
+        )
+        normalized_label = " ".join(normalized_label.casefold().split())
+        canonical_label = MATERIAL_ALIASES.get(normalized_label)
+        if canonical_label is None:
+            unknown[source_label] += 1
+            continue
+        normalized_row = dict(row)
+        normalized_row["material_suporte"] = canonical_label
+        selected.append(normalized_row)
+
+    if unknown:
+        details = ", ".join(
+            f"{label} ({count})" for label, count in sorted(unknown.items())
+        )
+        raise ValueError(
+            "condições de material sem classificação definida: " + details
+        )
+
+    present = {str(row["material_suporte"]) for row in selected}
+    missing = set(MATERIAL_LABELS) - present
+    if missing:
+        missing_text = ", ".join(MATERIAL_LABELS[item] for item in sorted(missing))
+        raise ValueError(
+            "faltam condições oficiais no ensaio de material: " + missing_text
+        )
+
+    rows_by_material: dict[str, list[dict[str, object]]] = defaultdict(list)
+    for row in selected:
+        rows_by_material[str(row["material_suporte"])].append(row)
+
+    for material in MATERIAL_ORDER:
+        group = rows_by_material[material]
+        attempts = [int(row["tentativa"]) for row in group]
+        if len(group) != 5 or sorted(attempts) != [1, 2, 3, 4, 5]:
+            raise ValueError(
+                f"{MATERIAL_LABELS[material]} deve conter cinco tentativas "
+                "únicas, numeradas de 1 a 5"
+            )
+
+        for row in group:
+            attempt = int(row["tentativa"])
+            detected_raw = row["detectou_0_1"]
+            if detected_raw not in (0, 1):
+                raise ValueError(
+                    f"detecção inválida em {MATERIAL_LABELS[material]}, "
+                    f"tentativa {attempt}: {detected_raw!r}"
+                )
+            detected = int(detected_raw)
+            epc = row["epc_observado"]
+            first_read = row["tempo_primeira_leitura_s"]
+            tag_reads = parse_metric(row["observacoes"], "leituras_tag")
+            rssi = parse_rssi(row["observacoes"])
+
+            if detected == 0 and (
+                epc not in (None, "")
+                or first_read is not None
+                or tag_reads not in (None, 0)
+                or rssi is not None
+            ):
+                raise ValueError(
+                    f"falha contraditória em {MATERIAL_LABELS[material]}, "
+                    f"tentativa {attempt}: há EPC, tempo ou leituras registradas"
+                )
+            if detected == 1 and (
+                epc in (None, "")
+                or first_read is None
+                or tag_reads is None
+                or tag_reads <= 0
+                or rssi is None
+            ):
+                raise ValueError(
+                    f"sucesso incompleto em {MATERIAL_LABELS[material]}, "
+                    f"tentativa {attempt}: faltam EPC, tempo, leituras ou RSSI"
+                )
+    return selected
+
+
+def pt_number(value: float, decimals: int = 1) -> str:
+    return f"{value:.{decimals}f}".replace(".", ",")
+
+
+def pt_optional_number(value: float | None, decimals: int = 1) -> str:
+    if value is None:
+        return "Sem leitura"
+    return pt_number(value, decimals)
+
+
+def mean_stdev_text(
+    mean_value: float | None,
+    stdev_value: float | None,
+    decimals: int = 1,
+) -> str:
+    if mean_value is None:
+        return "Sem leitura"
+    if stdev_value is None:
+        return pt_number(mean_value, decimals)
+    return (
+        f"{pt_number(mean_value, decimals)} $\\pm$ "
+        f"{pt_number(stdev_value, decimals)}"
+    )
+
+
+def parse_metric(observation: object, key: str) -> int | None:
+    if observation is None:
+        return None
+    match = re.search(rf"{re.escape(key)}=(\d+)", str(observation))
+    if not match:
+        return None
+    return int(match.group(1))
+
+
+def parse_rssi(observation: object) -> int | None:
+    return parse_metric(observation, "rssi_raw")
+
+
+def mean_or_none(values: list[float]) -> float | None:
+    return mean(values) if values else None
+
+
+def stdev_or_none(values: list[float]) -> float | None:
+    return stdev(values) if len(values) > 1 else None
+
+
+def wilson_interval(successes: int, attempts: int) -> tuple[float, float]:
+    """Retorna o IC de Wilson de 95% para uma proporção binomial."""
+    z = 1.959963984540054
+    proportion = successes / attempts
+    denominator = 1 + z**2 / attempts
+    center = (proportion + z**2 / (2 * attempts)) / denominator
+    half_width = (
+        z
+        * sqrt(
+            proportion * (1 - proportion) / attempts
+            + z**2 / (4 * attempts**2)
+        )
+        / denominator
+    )
+    return (center - half_width) * 100, (center + half_width) * 100
+
+
+def mean_ci95(values: list[float]) -> tuple[float, float] | None:
+    """IC t de 95% para a média; suficiente para as cinco rodadas atuais."""
+    if len(values) < 2:
+        return None
+    critical_values = {
+        2: 12.706,
+        3: 4.303,
+        4: 3.182,
+        5: 2.776,
+        6: 2.571,
+        7: 2.447,
+        8: 2.365,
+        9: 2.306,
+        10: 2.262,
+    }
+    critical = critical_values.get(len(values), 1.96)
+    half_width = critical * stdev(values) / sqrt(len(values))
+    return mean(values) - half_width, mean(values) + half_width
+
+
+def validate_distance_orientation_rows(
+    rows: list[dict[str, object]],
+) -> list[dict[str, object]]:
+    """Valida as nove contagens agregadas sem expandi-las em pseudotentativas."""
+    required = {
+        "distancia_m",
+        "orientacao_graus",
+        "tentativas",
+        "deteccoes",
+    }
+    keys: set[tuple[float, int]] = set()
+    normalized: list[dict[str, object]] = []
+
+    for index, row in enumerate(rows, start=2):
+        missing = required - set(row)
+        if missing:
+            raise ValueError(
+                f"linha {index} de Distancia_Orientacao sem colunas: "
+                + ", ".join(sorted(missing))
+            )
+        distance = float(row["distancia_m"])
+        angle = int(row["orientacao_graus"])
+        attempts = int(row["tentativas"])
+        detections = int(row["deteccoes"])
+        key = (distance, angle)
+        if key in keys:
+            raise ValueError(
+                "combinação repetida em Distancia_Orientacao: "
+                f"{distance:g} m e {angle} graus"
+            )
+        if attempts <= 0 or not 0 <= detections <= attempts:
+            raise ValueError(
+                f"contagem inválida em {distance:g} m e {angle} graus: "
+                f"{detections}/{attempts}"
+            )
+        keys.add(key)
+        normalized.append(
+            {
+                **row,
+                "distancia_m": distance,
+                "orientacao_graus": angle,
+                "tentativas": attempts,
+                "deteccoes": detections,
+            }
+        )
+
+    if len(normalized) != 9 or sum(
+        int(row["tentativas"]) for row in normalized
+    ) != 270:
+        raise ValueError(
+            "a matriz de distância e orientação deve conter nove combinações "
+            "e totalizar 270 tentativas"
+        )
+    return normalized
+
+
+def aggregate_distance_orientation(
+    distance_rows: list[dict[str, object]],
+    orientation_rows: list[dict[str, object]],
+    aggregate_rows: list[dict[str, object]],
+) -> list[dict[str, object]]:
+    """Integra as três fontes por célula de distância e orientação.
+
+    A soma é uma consolidação descritiva de observações que compartilham a
+    mesma distância e o mesmo ângulo. A composição de etiquetas e o nível de
+    registro podem variar entre blocos, razão pela qual os gráficos preservam
+    as duas dimensões e o texto não interpreta marginais como efeitos causais.
+    """
+    groups: dict[tuple[float, int], dict[str, object]] = defaultdict(
+        lambda: {
+            "attempts": 0,
+            "valid": 0,
+            "individual_attempts": 0,
+            "aggregate_attempts": 0,
+        }
+    )
+
+    for row in distance_rows:
+        key = (
+            float(row["distancia_horizontal_m"]),
+            int(row["orientacao_graus"]),
+        )
+        groups[key]["attempts"] = int(groups[key]["attempts"]) + 1
+        groups[key]["valid"] = int(groups[key]["valid"]) + int(
+            row["detectou_0_1"]
+        )
+        groups[key]["individual_attempts"] = (
+            int(groups[key]["individual_attempts"]) + 1
+        )
+
+    for row in orientation_rows:
+        key = (float(row["distancia_m"]), int(row["orientacao_graus"]))
+        groups[key]["attempts"] = int(groups[key]["attempts"]) + 1
+        groups[key]["valid"] = int(groups[key]["valid"]) + int(
+            row["detectou_0_1"]
+        )
+        groups[key]["individual_attempts"] = (
+            int(groups[key]["individual_attempts"]) + 1
+        )
+
+    for row in aggregate_rows:
+        key = (float(row["distancia_m"]), int(row["orientacao_graus"]))
+        attempts = int(row["tentativas"])
+        groups[key]["attempts"] = int(groups[key]["attempts"]) + attempts
+        groups[key]["valid"] = int(groups[key]["valid"]) + int(
+            row["deteccoes"]
+        )
+        groups[key]["aggregate_attempts"] = (
+            int(groups[key]["aggregate_attempts"]) + attempts
+        )
+
+    result: list[dict[str, object]] = []
+    for (distance, angle), values in sorted(groups.items()):
+        attempts = int(values["attempts"])
+        valid = int(values["valid"])
+        result.append(
+            {
+                "distance": distance,
+                "angle": angle,
+                "attempts": attempts,
+                "valid": valid,
+                "rate": valid / attempts * 100,
+                "ci95": wilson_interval(valid, attempts),
+                "individual_attempts": int(values["individual_attempts"]),
+                "aggregate_attempts": int(values["aggregate_attempts"]),
+            }
+        )
+    return result
+
+
+def marginalize_cells(
+    cells: list[dict[str, object]],
+    factor: str,
+) -> list[dict[str, object]]:
+    """Produz marginais descritivos para as tabelas de distância ou ângulo."""
+    if factor not in {"distance", "angle"}:
+        raise ValueError("factor deve ser distance ou angle")
+    groups: dict[float, dict[str, int]] = defaultdict(
+        lambda: {"attempts": 0, "valid": 0}
+    )
+    for cell in cells:
+        key = float(cell[factor])
+        groups[key]["attempts"] += int(cell["attempts"])
+        groups[key]["valid"] += int(cell["valid"])
+
+    result: list[dict[str, object]] = []
+    for value, counts in sorted(groups.items()):
+        attempts = counts["attempts"]
+        valid = counts["valid"]
+        result.append(
+            {
+                factor: value,
+                "attempts": attempts,
+                "valid": valid,
+                "rate": valid / attempts * 100,
+                "ci95": wilson_interval(valid, attempts),
+            }
+        )
+    return result
+
+
+def aggregate_distance(rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    groups: dict[float, list[dict[str, object]]] = defaultdict(list)
+    for row in rows:
+        groups[float(row["distancia_horizontal_m"])].append(row)
+
+    result = []
+    for distance, group in sorted(groups.items()):
+        tag_groups: dict[str, list[dict[str, object]]] = defaultdict(list)
+        for row in group:
+            tag_groups[str(row["tag_id"])].append(row)
+
+        attempts = len(group)
+        valid = sum(int(row["detectou_0_1"]) for row in group)
+        rates = [
+            sum(int(row["detectou_0_1"]) for row in tag_rows) / len(tag_rows) * 100
+            for tag_rows in tag_groups.values()
+        ]
+        first_reads = [
+            float(row["tempo_primeira_leitura_s"])
+            for row in group
+            if row["tempo_primeira_leitura_s"] is not None
+        ]
+        rssi_values = [
+            parse_rssi(row["observacoes"])
+            for row in group
+            if int(row["detectou_0_1"]) == 1
+            and parse_rssi(row["observacoes"]) is not None
+        ]
+
+        result.append(
+            {
+                "distance": distance,
+                "attempts": attempts,
+                "valid": valid,
+                "rate": valid / attempts * 100,
+                "ci95": wilson_interval(valid, attempts),
+                "minimum": min(rates),
+                "maximum": max(rates),
+                "first_time_mean": mean_or_none(first_reads),
+                "first_time_stdev": stdev_or_none(first_reads),
+                "rssi_mean": mean_or_none([float(value) for value in rssi_values]),
+                "rssi_stdev": stdev_or_none([float(value) for value in rssi_values]),
+            }
+        )
+    return result
+
+
+def aggregate_orientation(rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    groups: dict[float, list[dict[str, object]]] = defaultdict(list)
+    for row in rows:
+        groups[float(row["orientacao_graus"])].append(row)
+
+    result = []
+    for angle, group in sorted(groups.items()):
+        tag_groups: dict[str, list[dict[str, object]]] = defaultdict(list)
+        for row in group:
+            tag_groups[str(row["tag_id"])].append(row)
+
+        attempts = len(group)
+        valid = sum(int(row["detectou_0_1"]) for row in group)
+        rssi_values = [
+            parse_rssi(row["observacoes"])
+            for row in group
+            if int(row["detectou_0_1"]) == 1
+            and parse_rssi(row["observacoes"]) is not None
+        ]
+        result.append(
+            {
+                "angle": angle,
+                "attempts": attempts,
+                "valid": valid,
+                "rate": valid / attempts * 100,
+                "ci95": wilson_interval(valid, attempts),
+                "minimum": min(
+                    sum(int(row["detectou_0_1"]) for row in tag_rows)
+                    / len(tag_rows)
+                    * 100
+                    for tag_rows in tag_groups.values()
+                ),
+                "maximum": max(
+                    sum(int(row["detectou_0_1"]) for row in tag_rows)
+                    / len(tag_rows)
+                    * 100
+                    for tag_rows in tag_groups.values()
+                ),
+                "rssi_mean": mean_or_none([float(value) for value in rssi_values]),
+                "rssi_stdev": stdev_or_none([float(value) for value in rssi_values]),
+            }
+        )
+    return result
+
+
+def aggregate_material(rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    groups: dict[str, list[dict[str, object]]] = defaultdict(list)
+    for row in rows:
+        groups[str(row["material_suporte"])].append(row)
+
+    result = []
+    for material, group in groups.items():
+        attempts = len(group)
+        valid = sum(int(row["detectou_0_1"]) for row in group)
+        rssi_values = [
+            parse_rssi(row["observacoes"])
+            for row in group
+            if int(row["detectou_0_1"]) == 1
+            and parse_rssi(row["observacoes"]) is not None
+        ]
+        result.append(
+            {
+                "material": material,
+                "attempts": attempts,
+                "valid": valid,
+                "rate": valid / attempts * 100,
+                "ci95": wilson_interval(valid, attempts),
+                "rssi_mean": mean_or_none([float(value) for value in rssi_values]),
+                "rssi_stdev": stdev_or_none([float(value) for value in rssi_values]),
+            }
+        )
+
+    order = {material: index for index, material in enumerate(MATERIAL_ORDER)}
+    result.sort(key=lambda row: order.get(str(row["material"]), 99))
+    return result
+
+
+def inventory_coverage(row: dict[str, object]) -> float:
+    """Calcula a cobertura sem depender do cache de fórmulas do Excel."""
+    present = int(row["qtd_tags_presentes"])
+    detected = int(row["qtd_tags_detectadas"])
+    if present <= 0:
+        raise ValueError("qtd_tags_presentes deve ser maior que zero")
+    return detected / present * 100
+
+
+def inventory_complete(row: dict[str, object]) -> int:
+    """Indica inventário completo a partir das contagens registradas."""
+    return int(
+        int(row["qtd_tags_detectadas"]) >= int(row["qtd_tags_presentes"])
+    )
+
+
+def inventory_metrics(rows: list[dict[str, object]]) -> dict[str, object]:
+    coverages = [inventory_coverage(row) for row in rows]
+    duplicates = [
+        parse_metric(row["observacoes"], "duplicatas")
+        for row in rows
+        if parse_metric(row["observacoes"], "duplicatas") is not None
+    ]
+    valid_reads = [
+        parse_metric(row["observacoes"], "leituras_validas")
+        for row in rows
+        if parse_metric(row["observacoes"], "leituras_validas") is not None
+    ]
+    coverage_ci95 = mean_ci95(coverages)
+    complete_rounds = sum(inventory_complete(row) for row in rows)
+    complete_rate = complete_rounds / len(rows) * 100
+    return {
+        "rounds": len(rows),
+        "tags": int(rows[0]["qtd_tags_presentes"]),
+        "coverages": coverages,
+        "mean_coverage": mean(coverages),
+        "stdev_coverage": stdev(coverages),
+        "coverage_ci95": coverage_ci95,
+        "minimum_coverage": min(coverages),
+        "maximum_coverage": max(coverages),
+        "complete_rounds": complete_rounds,
+        "complete_rate": complete_rate,
+        "complete_ci95": wilson_interval(complete_rounds, len(rows)),
+        "external_reads": sum(int(row["leituras_externas"]) for row in rows),
+        "mean_duplicates": mean(duplicates) if duplicates else 0.0,
+        "total_duplicates": sum(duplicates) if duplicates else 0,
+        "mean_valid_reads": mean(valid_reads) if valid_reads else 0.0,
+    }
+
+
+def tag_performance(rows: list[dict[str, object]]) -> dict[str, dict[str, float | int]]:
+    groups: dict[str, list[dict[str, object]]] = defaultdict(list)
+    for row in rows:
+        groups[str(row["tag_id"])].append(row)
+    return {
+        tag: {
+            "attempts": len(group),
+            "valid": sum(int(row["detectou_0_1"]) for row in group),
+            "rate": sum(int(row["detectou_0_1"]) for row in group)
+            / len(group)
+            * 100,
+        }
+        for tag, group in sorted(groups.items())
+    }
+
+
+def render_table(
+    distance: list[dict[str, object]],
+    orientation: list[dict[str, object]],
+    material: list[dict[str, object]],
+    inventory: dict[str, object],
+    distance_tags: dict[str, dict[str, float | int]],
+    orientation_tags: dict[str, dict[str, float | int]],
+) -> str:
+    distance_rows = "\n".join(
+        "        "
+        f"{pt_number(float(row['distance']))} & {row['valid']}/{row['attempts']} & "
+        f"{pt_number(float(row['rate']))}\\% & "
+        f"{pt_number(float(row['ci95'][0]))}\\% a "
+        f"{pt_number(float(row['ci95'][1]))}\\% \\\\"
+        for row in distance
+    )
+    orientation_rows = "\n".join(
+        "        "
+        f"{int(row['angle'])} & {row['valid']}/{row['attempts']} & "
+        f"{pt_number(float(row['rate']))}\\% & "
+        f"{pt_number(float(row['ci95'][0]))}\\% a "
+        f"{pt_number(float(row['ci95'][1]))}\\% \\\\"
+        for row in orientation
+    )
+    material_rows = "\n".join(
+        "        "
+        f"{MATERIAL_LABELS.get(str(row['material']), str(row['material']))} & "
+        f"{row['valid']}/{row['attempts']} & {pt_number(float(row['rate']))}\\% & "
+        f"{pt_number(float(row['ci95'][0]))}\\% a "
+        f"{pt_number(float(row['ci95'][1]))}\\% & "
+        f"{mean_stdev_text(row['rssi_mean'], row['rssi_stdev'])} \\\\"
+        for row in material
+    )
+    tag_rows = "\n".join(
+        "        "
+        f"{TAG_SUPPORT_LABELS.get(tag, tag)} & "
+        f"{distance_tags[tag]['valid']}/{distance_tags[tag]['attempts']} & "
+        f"{pt_number(float(distance_tags[tag]['rate']))}\\% & "
+        f"{orientation_tags[tag]['valid']}/{orientation_tags[tag]['attempts']} & "
+        f"{pt_number(float(orientation_tags[tag]['rate']))}\\% \\\\"
+        for tag in distance_tags
+    )
+    inventory_rows = "\n".join(
+        "        "
+        f"{index} & {int(row['qtd_tags_detectadas'])} & {pt_number(inventory_coverage(row))}\\% & "
+        f"{'Sim' if inventory_complete(row) else 'Não'} & {int(row['leituras_externas'])} \\\\"
+        for index, row in enumerate(inventory["rows"], start=1)
+    )
+
+    return f"""% Tabelas elaboradas a partir dos dados experimentais coletados.
+% Os níveis de RSSI são apresentados na unidade bruta informada pelo módulo.
+
+\\newcommand{{\\TabelaAlcanceDistancia}}{{%
+\\begin{{table}}[htbp]
+    \\centering
+    \\caption{{Síntese descritiva das medições por distância horizontal.}}
+    \\label{{tab:resultado-alcance-distancia}}
+    \\small
+    \\setlength{{\\tabcolsep}}{{7pt}}
+    \\begin{{tabular}}{{cccc}}
+        \\toprule
+        \\textbf{{\\shortstack{{Distância\\\\(m)}}}} &
+        \\textbf{{\\shortstack{{Detecções\\\\($n/N$)}}}} &
+        \\textbf{{\\shortstack{{Taxa de\\\\leitura}}}} &
+        \\textbf{{IC 95\\% de Wilson}} \\\\
+        \\midrule
+{distance_rows}
+        \\bottomrule
+    \\end{{tabular}}
+    \\fonte{{{TABLE_SOURCE}}}
+\\end{{table}}%
+}}
+
+\\newcommand{{\\TabelaOrientacao}}{{%
+\\begin{{table}}[htbp]
+    \\centering
+    \\caption{{Síntese descritiva das medições por orientação da etiqueta.}}
+    \\label{{tab:resultado-orientacao}}
+    \\small
+    \\setlength{{\\tabcolsep}}{{7pt}}
+    \\begin{{tabular}}{{cccc}}
+        \\toprule
+        \\textbf{{\\shortstack{{Orientação\\\\($^\\circ$)}}}} &
+        \\textbf{{\\shortstack{{Detecções\\\\($n/N$)}}}} &
+        \\textbf{{\\shortstack{{Taxa de\\\\leitura}}}} &
+        \\textbf{{IC 95\\% de Wilson}} \\\\
+        \\midrule
+{orientation_rows}
+        \\bottomrule
+    \\end{{tabular}}
+    \\fonte{{{TABLE_SOURCE}}}
+\\end{{table}}%
+}}
+
+\\newcommand{{\\TabelaMaterial}}{{%
+\\begin{{table}}[htbp]
+    \\centering
+    \\caption{{Resultado experimental por material e condição de fixação.}}
+    \\label{{tab:resultado-material}}
+    \\small
+    \\setlength{{\\tabcolsep}}{{4pt}}
+    \\begin{{tabular}}{{lcccc}}
+        \\toprule
+        \\textbf{{\\shortstack{{Material ou condição\\\\de fixação}}}} &
+        \\textbf{{\\shortstack{{Detecções\\\\($n/N$)}}}} &
+        \\textbf{{\\shortstack{{Taxa de\\\\leitura}}}} &
+        \\textbf{{IC 95\\%}} &
+        \\textbf{{\\shortstack{{RSSI bruto\\\\média $\\pm$ DP}}}} \\\\
+        \\midrule
+{material_rows}
+        \\bottomrule
+    \\end{{tabular}}
+    \\fonte{{{TABLE_SOURCE}}}
+\\end{{table}}%
+}}
+
+\\newcommand{{\\TabelaPorEtiqueta}}{{%
+\\begin{{table}}[htbp]
+    \\centering
+    \\caption{{Desempenho por conjunto formado pela etiqueta e pelo suporte no subconjunto com registros individuais.}}
+    \\label{{tab:resultado-por-tag}}
+    \\small
+    \\setlength{{\\tabcolsep}}{{4pt}}
+    \\begin{{tabular}}{{lrrrr}}
+        \\toprule
+        \\textbf{{\\shortstack{{Etiqueta\\\\e suporte}}}} &
+        \\textbf{{\\shortstack{{Distância\\\\detecções ($n/N$)}}}} &
+        \\textbf{{\\shortstack{{Taxa de\\\\leitura}}}} &
+        \\textbf{{\\shortstack{{Orientação\\\\detecções ($n/N$)}}}} &
+        \\textbf{{\\shortstack{{Taxa de\\\\leitura}}}} \\\\
+        \\midrule
+{tag_rows}
+        \\bottomrule
+    \\end{{tabular}}
+    \\fonte{{{TABLE_SOURCE}}}
+\\end{{table}}%
+}}
+
+\\newcommand{{\\TabelaInventarioRodadas}}{{%
+\\begin{{table}}[htbp]
+    \\centering
+    \\caption{{Cobertura por rodada no inventário experimental em sala.}}
+    \\label{{tab:resultado-inventario-rodadas}}
+    \\small
+    \\setlength{{\\tabcolsep}}{{6pt}}
+    \\begin{{tabular}}{{ccccc}}
+        \\toprule
+        \\textbf{{Rodada}} &
+        \\textbf{{\\shortstack{{Etiquetas\\\\detectadas}}}} &
+        \\textbf{{Cobertura}} &
+        \\textbf{{\\shortstack{{Rodada\\\\completa}}}} &
+        \\textbf{{\\shortstack{{Leituras\\\\externas}}}} \\\\
+        \\midrule
+{inventory_rows}
+        \\bottomrule
+    \\end{{tabular}}
+    \\fonte{{{TABLE_SOURCE}}}
+\\end{{table}}%
+}}
+
+\\newcommand{{\\TabelaInventarioResumo}}{{%
+\\begin{{table}}[htbp]
+    \\centering
+    \\caption{{Resumo do inventário experimental.}}
+    \\label{{tab:resultado-inventario}}
+    \\small
+    \\begin{{tabular}}{{p{{6.2cm}}r}}
+        \\toprule
+        \\textbf{{Métrica}} & \\textbf{{Valor}} \\\\
+        \\midrule
+        Rodadas analisadas & {inventory['rounds']} \\\\
+        Etiquetas presentes por rodada & {inventory['tags']} \\\\
+        Cobertura média & {pt_number(float(inventory['mean_coverage']))}\\% \\\\
+        Desvio-padrão da cobertura & {pt_number(float(inventory['stdev_coverage']))} pontos percentuais \\\\
+        IC 95\\% da cobertura média & {pt_number(float(inventory['coverage_ci95'][0]))}\\% a {pt_number(float(inventory['coverage_ci95'][1]))}\\% \\\\
+        Faixa de cobertura & {pt_number(float(inventory['minimum_coverage']))}\\% a {pt_number(float(inventory['maximum_coverage']))}\\% \\\\
+        Taxa de rodadas completas & {inventory['complete_rounds']}/{inventory['rounds']} = {pt_number(float(inventory['complete_rate']))}\\% \\\\
+        IC 95\\% da taxa de rodadas completas & {pt_number(float(inventory['complete_ci95'][0]))}\\% a {pt_number(float(inventory['complete_ci95'][1]))}\\% \\\\
+        Leituras externas totais & {inventory['external_reads']} \\\\
+        Leituras repetidas totais & {inventory['total_duplicates']} \\\\
+        Leituras repetidas médias por rodada & {pt_number(float(inventory['mean_duplicates']))} \\\\
+        Leituras válidas médias por rodada & {pt_number(float(inventory['mean_valid_reads']))} \\\\
+        \\bottomrule
+    \\end{{tabular}}
+    \\fonte{{{TABLE_SOURCE}}}
+\\end{{table}}%
+}}
+"""
+
+
+def save_figure(figure, filename: str) -> None:
+    path = FIGURE_DIR / filename
+    figure.savefig(path, dpi=170, bbox_inches="tight", facecolor="white")
+
+
+def write_figures(
+    distance_orientation: list[dict[str, object]],
+    distance_details: list[dict[str, object]],
+    material: list[dict[str, object]],
+    inventory: dict[str, object],
+) -> None:
+    import matplotlib.pyplot as plt
+
+    plt.rcParams.update(
+        {
+            "font.size": 12,
+            "axes.labelsize": 14,
+            "xtick.labelsize": 12,
+            "ytick.labelsize": 12,
+            "axes.grid": True,
+            "grid.alpha": 0.25,
+        }
+    )
+
+    fig, ax = plt.subplots(figsize=(10, 5.8), constrained_layout=True)
+    for angle in sorted(
+        {int(row["angle"]) for row in distance_orientation}
+    ):
+        rows = sorted(
+            (
+                row
+                for row in distance_orientation
+                if int(row["angle"]) == angle
+            ),
+            key=lambda row: float(row["distance"]),
+        )
+        x = [float(row["distance"]) for row in rows]
+        y = [float(row["rate"]) for row in rows]
+        lower = [
+            value - float(row["ci95"][0])
+            for value, row in zip(y, rows)
+        ]
+        upper = [
+            float(row["ci95"][1]) - value
+            for value, row in zip(y, rows)
+        ]
+        ax.errorbar(
+            x,
+            y,
+            yerr=[lower, upper],
+            marker="o",
+            linewidth=2.2,
+            capsize=4,
+            label=f"{angle}°",
+        )
+    ax.set(
+        xlabel="Distância horizontal entre antena e etiqueta (m)",
+        ylabel="Taxa de leitura (%)",
+        ylim=(0, 105),
+    )
+    distances = sorted(
+        {float(row["distance"]) for row in distance_orientation}
+    )
+    ax.set_xticks(distances, [pt_number(value) for value in distances])
+    ax.legend(title="Orientação", frameon=False, ncol=3)
+    save_figure(fig, "resultado_alcance_distancia.png")
+    plt.close(fig)
+
+    time_rows = [
+        row
+        for row in distance_details
+        if row["first_time_mean"] is not None
+    ]
+    tx = [float(row["distance"]) for row in time_rows]
+    ty = [float(row["first_time_mean"]) for row in time_rows]
+    terr = [float(row["first_time_stdev"] or 0.0) for row in time_rows]
+    fig, ax = plt.subplots(figsize=(10, 5.6), constrained_layout=True)
+    ax.errorbar(
+        tx,
+        ty,
+        yerr=terr,
+        marker="o",
+        linewidth=2.6,
+        capsize=5,
+        color="#813d18",
+    )
+    ax.set(
+        xlabel="Distância horizontal entre antena e etiqueta (m)",
+        ylabel="Tempo médio até a primeira leitura (s)",
+        ylim=(0, None),
+    )
+    save_figure(fig, "resultado_tempo_primeira_leitura.png")
+    plt.close(fig)
+
+    fig, ax = plt.subplots(figsize=(10, 5.8), constrained_layout=True)
+    for distance in sorted(
+        {float(row["distance"]) for row in distance_orientation}
+    ):
+        rows = sorted(
+            (
+                row
+                for row in distance_orientation
+                if float(row["distance"]) == distance
+            ),
+            key=lambda row: int(row["angle"]),
+        )
+        x = [int(row["angle"]) for row in rows]
+        y = [float(row["rate"]) for row in rows]
+        lower = [
+            value - float(row["ci95"][0])
+            for value, row in zip(y, rows)
+        ]
+        upper = [
+            float(row["ci95"][1]) - value
+            for value, row in zip(y, rows)
+        ]
+        ax.errorbar(
+            x,
+            y,
+            yerr=[lower, upper],
+            marker="o",
+            linewidth=2.0,
+            capsize=4,
+            label=f"{pt_number(distance)} m",
+        )
+    ax.set(
+        xlabel="Orientação da etiqueta (graus)",
+        ylabel="Taxa de leitura (%)",
+        ylim=(0, 105),
+        xticks=[0, 45, 90],
+    )
+    ax.legend(title="Distância", frameon=False, ncol=3)
+    save_figure(fig, "resultado_orientacao.png")
+    plt.close(fig)
+
+    materials = [
+        MATERIAL_LABELS.get(str(row["material"]), str(row["material"]))
+        for row in material
+    ]
+    material_rates = [float(row["rate"]) for row in material]
+    material_lower = [
+        value - float(row["ci95"][0])
+        for value, row in zip(material_rates, material)
+    ]
+    material_upper = [
+        float(row["ci95"][1]) - value
+        for value, row in zip(material_rates, material)
+    ]
+    plot_labels = [
+        label.replace("Metal direto", "Metal\ndireto").replace(
+            "Metal com espaçador", "Metal com\nespaçador"
+        )
+        for label in materials
+    ]
+    fig, ax = plt.subplots(figsize=(11.5, 5.8), constrained_layout=True)
+    ax.bar(
+        plot_labels,
+        material_rates,
+        yerr=[material_lower, material_upper],
+        capsize=5,
+        color="#7965a8",
+    )
+    ax.set(
+        xlabel="Material ou condição de fixação",
+        ylabel="Taxa de leitura (%)",
+        ylim=(0, 105),
+    )
+    ax.tick_params(axis="x", rotation=10)
+    save_figure(fig, "resultado_material.png")
+    plt.close(fig)
+
+    rounds = list(range(1, len(inventory["rows"]) + 1))
+    fig, ax = plt.subplots(figsize=(10, 5.6), constrained_layout=True)
+    ax.bar(rounds, inventory["coverages"], color="#b86139")
+    ax.set(
+        xlabel="Rodada de inventário",
+        ylabel="Cobertura (%)",
+        ylim=(0, 105),
+        xticks=rounds,
+    )
+    save_figure(fig, "resultado_inventario.png")
+    plt.close(fig)
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--write",
+        action="store_true",
+        help="grava a tabela LaTeX e as figuras",
+    )
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+
+    if not WORKBOOK.is_file():
+        print(f"erro: arquivo não encontrado: {WORKBOOK}", file=sys.stderr)
+        return 2
+
+    # As fórmulas existentes na planilha são deliberadamente ignoradas. Todos
+    # os indicadores são recalculados abaixo a partir das contagens brutas.
+    workbook = load_workbook(WORKBOOK, data_only=False)
+    distance_rows = rows_as_dicts(workbook, "Alcance")
+    orientation_rows = rows_as_dicts(workbook, "Orientacao")
+    distance_orientation_rows = rows_as_dicts(
+        workbook, "Distancia_Orientacao"
+    )
+    material_rows = rows_as_dicts(workbook, "Material")
+    inventory_rows = rows_as_dicts(workbook, "Inventario")
+
+    distance_rows = deduplicate_distance_rows(distance_rows)
+    distance_orientation_rows = validate_distance_orientation_rows(
+        distance_orientation_rows
+    )
+    material_rows = select_official_material_rows(material_rows)
+    distance_details = aggregate_distance(distance_rows)
+    distance_orientation = aggregate_distance_orientation(
+        distance_rows,
+        orientation_rows,
+        distance_orientation_rows,
+    )
+    distance = marginalize_cells(distance_orientation, "distance")
+    orientation = marginalize_cells(distance_orientation, "angle")
+    material = aggregate_material(material_rows)
+    inventory = inventory_metrics(inventory_rows)
+    inventory["rows"] = inventory_rows
+    distance_tags = tag_performance(distance_rows)
+    orientation_tags = tag_performance(orientation_rows)
+
+    print("Métricas integradas de distância e orientação:")
+    for row in distance_orientation:
+        print(
+            f"  {row['distance']:.1f} m / {row['angle']:.0f} graus: "
+            f"{row['valid']}/{row['attempts']} = {row['rate']:.1f}%"
+        )
+    print("Marginais descritivos por distância:")
+    for row in distance:
+        print(
+            f"  distância {row['distance']:.1f} m: "
+            f"{row['valid']}/{row['attempts']} = {row['rate']:.1f}%"
+        )
+    print("Marginais descritivos por orientação:")
+    for row in orientation:
+        print(
+            f"  orientação {row['angle']:.0f}°: "
+            f"{row['valid']}/{row['attempts']} = {row['rate']:.1f}%"
+        )
+    print(
+        f"  inventário: cobertura média {inventory['mean_coverage']:.1f}%; "
+        f"{inventory['complete_rounds']}/{inventory['rounds']} rodadas completas"
+    )
+
+    if not args.write:
+        print("Verificação concluída sem alterar arquivos.")
+        return 0
+
+    TABLE_OUTPUT.write_text(
+        render_table(
+            distance,
+            orientation,
+            material,
+            inventory,
+            distance_tags,
+            orientation_tags,
+        ),
+        encoding="utf-8",
+        newline="\n",
+    )
+    write_figures(
+        distance_orientation,
+        distance_details,
+        material,
+        inventory,
+    )
+    print(f"Tabelas gravadas em: {TABLE_OUTPUT.resolve()}")
+    print(f"Figuras gravadas em: {FIGURE_DIR.resolve()}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

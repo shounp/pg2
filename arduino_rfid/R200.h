@@ -1,125 +1,104 @@
-#ifndef R200_h
-#define R200_h
+#ifndef R200_H
+#define R200_H
 
-// Generate additional debug information to the serial connection when defined
-// #define DEBUG
-
-#include <stdint.h>
 #include <Arduino.h>
+#include <stdint.h>
 
 #define RX_BUFFER_LENGTH 128
 #define MAX_EPC_LENGTH 32
 
 class R200 {
-
-  private:
-    Stream *_serial;
-    uint8_t _buffer[RX_BUFFER_LENGTH] = {0};
-    uint8_t calculateCheckSum(uint8_t *buffer);
-    uint16_t arrayToUint16(uint8_t *array);
-    bool parseReceivedData();
-    bool dataIsValid();
-    bool receiveData(unsigned long timeOut = 500);
-    void dumpReceiveBufferToSerial();
-    uint8_t flush();
-
-  public:
-    R200();
-
-    uint8_t uid[MAX_EPC_LENGTH] = {0};
-    uint8_t uidLength = 0;
-
-    bool begin(Stream *serial);
-    void loop();
-    void poll();
-    void setMultiplePollingMode(bool enable=true);
-    void dumpModuleInfo();
-    bool dataAvailable();
-    void setTransmitPower(uint16_t power);
-    //bool newCardPresent();
-    //bool isCardPresent();
-    void dumpUIDToSerial();
-
-
-
- // Commands sent to the reader, and responses received back, are sent as data frames, e.g.
- // Header | Type | Command | ParamLength (2bytes) | Parameter(s) | Checksum | End
- //   AA   |  00  |   07    |      00 03           |   04 02 05   |    15    | DD
- //
- // Frames always start with the header value 0xAA
- // Type indicates a command to the reader (0x00), or a response (0x01), or notification (0x02) back from it
- // Command is the instruction to be performed, or the response from that instruction
- // ParamLength gives 2-byte (MSB then LSB) number of parameters being passed in the frame
- // Params may be zero or more
- // Checksum is the LSB of the sum of bytes from the type to the last instruction parameter (i.e. excluding Frame Header)
- // Frames always end with the tail value 0xDD
-
-  // Position of elements in the frame definition, as offset from the header
-  enum R200_FrameStructure : byte {
-    R200_HeaderPos = 0x00,
-    R200_TypePos = 0x01,
-    R200_CommandPos = 0x02,
-    R200_ParamLengthMSBPos = 0x03,
-    R200_ParamLengthLSBPos = 0x04,
-    R200_ParamPos = 0x05,
-    // Offset of other response elements - parameters, checksum, and frame end - are variable
-    // R200_ParamPos = if(R200_ParamLengthMSBPos << 8 + R200_ParamLengthLSBPos) > 0) { 0x05 } else { null }
-    // R200_ChecksumPos = 0x05 + (R200_ParamLengthMSBPos << 8 + R200_ParamLengthLSBPos)
-    // R200_EndPos = 0x06 + (R200_ParamLengthMSBPos << 8 + R200_ParamLengthLSBPos)
+ public:
+  enum PollResult : uint8_t {
+    RESULT_NONE = 0,
+    RESULT_TAG,
+    RESULT_NO_TAG,
+    RESULT_INVALID_FRAME,
+    RESULT_COMMAND_ERROR
   };
 
-  enum R200_FrameControl : byte {
-    R200_FrameHeader = 0xAA,
-    R200_FrameEnd = 0xDD,
+  R200();
+
+  uint8_t uid[MAX_EPC_LENGTH];
+  uint8_t uidLength;
+
+  bool begin(Stream *serial);
+  bool loop();
+  void poll();
+  void setMultiplePollingMode(bool enable = true);
+  void setTransmitPower(uint16_t powerCentiDbm);
+  bool getWorkArea(uint8_t &region);
+  bool getWorkingChannel(uint8_t &channelIndex);
+  bool getTransmitPower(uint16_t &powerCentiDbm);
+  void dumpLastFrameTo(Print &output) const;
+  uint16_t lastFrameLength() const;
+  void dumpModuleInfo();
+  void dumpUIDToSerial();
+  bool dataAvailable() const;
+  void discardInput();
+
+  bool hasResult() const;
+  PollResult result() const;
+  int16_t rssiRaw() const;
+  void clearResult();
+
+ private:
+  Stream *_serial;
+  uint8_t _buffer[RX_BUFFER_LENGTH];
+  uint16_t _receivedLength;
+  bool _resultReady;
+  PollResult _lastResult;
+  int16_t _lastRssiRaw;
+
+  bool receiveData(unsigned long timeoutMs = 500);
+  bool dataIsValid() const;
+  bool queryParameter(uint8_t command, uint8_t *parameter,
+                      uint16_t expectedLength,
+                      unsigned long timeoutMs = 750);
+  void processReceivedData();
+  uint8_t calculateCheckSum(const uint8_t *buffer) const;
+  uint16_t arrayToUint16(const uint8_t *array) const;
+
+  enum FramePosition : uint8_t {
+    HEADER_POS = 0,
+    TYPE_POS = 1,
+    COMMAND_POS = 2,
+    PARAM_LENGTH_MSB_POS = 3,
+    PARAM_LENGTH_LSB_POS = 4,
+    PARAM_POS = 5
   };
 
-  enum R200_FrameType : byte {
-    FrameType_Command = 0x00,
-    FrameType_Response = 0x01,
-    FrameType_Notification = 0x02,
+  enum FrameControl : uint8_t {
+    FRAME_HEADER = 0xAA,
+    FRAME_END = 0xDD
   };
 
-  // 35.
-	enum R200_Command : byte {
-    CMD_GetModuleInfo = 0x03,
-    CMD_SinglePollInstruction = 0x22,
-    CMD_MultiplePollInstruction = 0x27,
-    CMD_StopMultiplePoll = 0x28,
-    CMD_SetSelectParameter = 0x0C,
-    CMD_GetSelectParameter = 0x0B,
-    CMD_SetSendSelectInstruction = 0x12,
-    CMD_ReadLabel = 0x39,
-    CMD_WriteLabel = 0x49,
-    CMD_LockLabel = 0x82,
-    CMD_KillTag = 0x65,
-    CMD_GetQueryParameters = 0x0D,
-    CMD_SetQueryParameters= 0x0E,
-    CMD_SetWorkArea = 0x07,
-    CMD_SetWorkingChannel = 0xAB,
-    CMD_GetWorkingChannel = 0xAA,
-    CMD_SetAutoFrequencyHopping = 0xAD,
-    CMD_AcquireTransmitPower = 0xB7,
-    CMD_SetTransmitPower = 0xB6,
-    CMD_SetTransmitContinuousCarrier = 0xB0,
-    CMD_GetReceiverDemodulatorParameters = 0xF1,
-    CMD_SetReceiverDemodulatorParameters = 0xF0,
-    CMD_TestRFInputBlockingSignal = 0xF2,
-    CMD_TestChannelRSSI = 0xF3,
-    CMD_ControlIOPort = 0x1A,
-    CMD_ModuleSleep = 0x17,
-    CMD_SetModuleIdleSleepTime = 0x1D,
-    CMD_ExecutionFailure = 0xFF,
+  enum FrameType : uint8_t {
+    FRAME_COMMAND = 0x00,
+    FRAME_RESPONSE = 0x01,
+    FRAME_NOTIFICATION = 0x02
   };
 
-  enum R200_ErrorCode : byte {
-    ERR_CommandError = 0x17,
-    ERR_FHSSFail = 0x20,
-    ERR_InventoryFail = 0x15,
-    ERR_AccessFail = 0x16,
-    ERR_ReadFail = 0x09,
-    ERR_WriteFail = 0x10,
-    ERR_LockFail = 0x13,
-    ERR_KillFail = 0x12,
+  enum Command : uint8_t {
+    CMD_GET_MODULE_INFO = 0x03,
+    CMD_SINGLE_POLL = 0x22,
+    CMD_MULTIPLE_POLL = 0x27,
+    CMD_STOP_MULTIPLE_POLL = 0x28,
+    CMD_GET_WORK_AREA = 0x08,
+    CMD_GET_WORKING_CHANNEL = 0xAA,
+    CMD_SET_TRANSMIT_POWER = 0xB6,
+    CMD_GET_TRANSMIT_POWER = 0xB7,
+    CMD_EXECUTION_FAILURE = 0xFF
+  };
+
+  enum ErrorCode : uint8_t {
+    ERR_COMMAND = 0x17,
+    ERR_FHSS = 0x20,
+    ERR_INVENTORY = 0x15,
+    ERR_ACCESS = 0x16,
+    ERR_READ = 0x09,
+    ERR_WRITE = 0x10
   };
 };
+
 #endif

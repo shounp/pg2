@@ -1,383 +1,333 @@
+#include "R200.h"
+
 #include <Arduino.h>
-#include "r200.h"
+#include <string.h>
 
-// Constructor
-R200::R200() {};
+R200::R200()
+    : uidLength(0),
+      _serial(NULL),
+      _receivedLength(0),
+      _resultReady(false),
+      _lastResult(RESULT_NONE),
+      _lastRssiRaw(-1) {
+  memset(uid, 0, sizeof(uid));
+  memset(_buffer, 0, sizeof(_buffer));
+}
 
-bool R200::begin(Stream *serial){
+bool R200::begin(Stream *serial) {
   _serial = serial;
-  return true;
-};
-
-void printHexByte(char* name, uint8_t value){
-  Serial.print(name);
-  Serial.print(":");
-  Serial.print(value < 0x10 ? "0x0" : "0x");
-  Serial.println(value, HEX);
+  clearResult();
+  return _serial != NULL;
 }
 
-void printHexBytes(char* name, uint8_t *value, uint8_t len){
-  Serial.print(name);
-  Serial.print(":");
-  Serial.print("0x");
-  for(int i=0; i<len; i++){
-    Serial.print(value[i] < 0x10 ? "0" : "");
-    Serial.print(value[i], HEX);
+bool R200::loop() {
+  if (_serial == NULL || !dataAvailable()) {
+    return false;
   }
-  Serial.println("");
+
+  if (!receiveData()) {
+    return false;
+  }
+
+  if (!dataIsValid()) {
+    _lastResult = RESULT_INVALID_FRAME;
+    _resultReady = true;
+    return true;
+  }
+
+  processReceivedData();
+  return true;
 }
 
-void printHexWord(char* name, uint8_t MSB, uint8_t LSB){
-  Serial.print(name);
-  Serial.print(":");
-  Serial.print(MSB < 0x10 ? "0x0" : "0x");
-  Serial.println(MSB, HEX);
-  Serial.print(LSB < 0x10 ? "0" : "");
-  Serial.println(LSB, HEX);
+bool R200::dataAvailable() const {
+  return _serial != NULL && _serial->available() > 0;
 }
 
-void R200::loop(){
-  // Has any new data been received?      
-  if(dataAvailable()){
-    // Attempt to receive a full frame of data
-    if(receiveData()){
-      if(dataIsValid()){
-        // If a full frame of data has been received, parse it
-        // TODO For reasons that I absolutely cannot fathom, this section does not work if moved into
-        // a separate function....
-        // parseReceivedData();
-        switch(_buffer[R200_CommandPos]){
-          case CMD_GetModuleInfo:
-            for (uint8_t i=0; i<RX_BUFFER_LENGTH-8; i++) {
-              Serial.print((char)_buffer[6 + i]);
-              // Stop when then only two bytes left are the CRC and FrameEnd marker
-              if (_buffer[8 + i] == R200_FrameEnd) {
-                break;
-              }
-            }
-            Serial.println("");
-            break;
-          case CMD_SinglePollInstruction:
-          case CMD_MultiplePollInstruction:
-            // Example successful response
-            // AA 02 22 00 11 C7 30 00 E2 80 68 90 00 00 50 0E 88 C6 A4 A7 11 9B 29 DD 
-            // AA:Frame Header
-            // 02:Instruction Code
-            // 22:Command Parameter
-            // 00 11:Instruction data length (0x11 = 17 bytes)
-            // C7：RSSI Signal Strength
-            // 30 00: Label PC code (factory reg code)
-            // E2 80 68 90 00 00 50 0E 88 C6 A4 A7：EPC code
-            // 11 9B:CRC check
-            // 29: Verification
-            // DD: End of frame
-            {
-            uint16_t paramLength = arrayToUint16(&_buffer[R200_ParamLengthMSBPos]);
-            if (paramLength < 5) {
-              break;
-            }
-            uint16_t rawEpcLength = paramLength - 5; // RSSI + PC(2) + CRC(2)
-            uint8_t epcLength = rawEpcLength > MAX_EPC_LENGTH ? MAX_EPC_LENGTH : rawEpcLength;
-            uint8_t *epcPtr = &_buffer[R200_ParamPos + 3];
-            #ifdef DEBUG
-              printHexByte("RSSI", _buffer[R200_ParamPos]);
-              printHexWord("PC", _buffer[R200_ParamPos + 1], _buffer[R200_ParamPos + 2]);
-              printHexBytes("EPC", epcPtr, epcLength);
-            #endif
-            if(uidLength != epcLength || memcmp(uid, epcPtr, epcLength) != 0) {
-              memset(uid, 0, sizeof uid);
-              memcpy(uid, epcPtr, epcLength);
-              uidLength = epcLength;
-              #ifdef DEBUG
-                Serial.print("New card detected : ");
-                dumpUIDToSerial();
-                Serial.println("");
-              #endif
-            }
-            else {
-              #ifdef DEBUG
-                Serial.print("Same card still present : ");
-                dumpUIDToSerial();
-                Serial.println("");
-              #endif
-            }
-            #ifdef DEBUG
-              uint16_t crcPos = R200_ParamPos + 3 + rawEpcLength;
-              printHexWord("CRC", _buffer[crcPos], _buffer[crcPos + 1]);
-            #endif
-            }
-            break;
-          case CMD_ExecutionFailure:
-            switch(_buffer[R200_ParamPos]){
-              case ERR_CommandError:
-                Serial.println("Command error");
-                break;
-              case ERR_InventoryFail:
-                // This is not necessarily a "failure" - it just means that there are no cards in range
-                // Serial.print("No card detected!");
-                // If there was previously a uid
-                if(uidLength > 0) {
-                  #ifdef DEBUG
-                    Serial.print("Card removed : ");
-                    dumpUIDToSerial();
-                    Serial.println("");
-                  #endif
-                  memset(uid, 0, sizeof uid);
-                  uidLength = 0;
-                }
-                break;
-              case ERR_AccessFail:
-                // Serial.println("Access Fail");
-                break;
-              case ERR_ReadFail:
-                // Serial.println("Read fail");
-                break;
-              case ERR_WriteFail:
-                // Serial.println("Write fail");
-                break;
-              default:
-                // Serial.print("Fail code ");
-                // Serial.println(_buffer[R200_ParamPos], HEX);
-                break;
-            }
-            break;
+bool R200::hasResult() const { return _resultReady; }
+
+R200::PollResult R200::result() const { return _lastResult; }
+
+int16_t R200::rssiRaw() const { return _lastRssiRaw; }
+
+void R200::clearResult() {
+  _resultReady = false;
+  _lastResult = RESULT_NONE;
+  _lastRssiRaw = -1;
+}
+
+void R200::discardInput() {
+  if (_serial == NULL) {
+    return;
+  }
+  while (_serial->available() > 0) {
+    _serial->read();
+  }
+}
+
+bool R200::receiveData(unsigned long timeoutMs) {
+  if (_serial == NULL) {
+    return false;
+  }
+
+  memset(_buffer, 0, sizeof(_buffer));
+  _receivedLength = 0;
+  uint16_t expectedLength = 0;
+  const unsigned long start = millis();
+
+  while (millis() - start < timeoutMs) {
+    while (_serial->available() > 0) {
+      const uint8_t value = static_cast<uint8_t>(_serial->read());
+
+      // Ignora lixo até o início inequívoco de um quadro.
+      if (_receivedLength == 0 && value != FRAME_HEADER) {
+        continue;
+      }
+
+      if (_receivedLength >= RX_BUFFER_LENGTH) {
+        discardInput();
+        return false;
+      }
+
+      _buffer[_receivedLength++] = value;
+
+      // Cabeçalho(1) + tipo(1) + comando(1) + tamanho(2) + parâmetros
+      // + checksum(1) + final(1) = tamanho dos parâmetros + 7 bytes.
+      if (_receivedLength == 5) {
+        const uint16_t parameterLength =
+            arrayToUint16(&_buffer[PARAM_LENGTH_MSB_POS]);
+        expectedLength = parameterLength + 7U;
+        if (expectedLength > RX_BUFFER_LENGTH || expectedLength < 7U) {
+          discardInput();
+          return false;
         }
       }
+
+      if (expectedLength > 0 && _receivedLength == expectedLength) {
+        return _buffer[_receivedLength - 1] == FRAME_END;
+      }
     }
   }
+
+  return false;
 }
 
-// Has any data been received from the reader?
-bool R200::dataIsValid(){
-  // Serial.println("Checking Data Valid");
-  // dumpReceiveBufferToSerial();
-  uint8_t CRC = calculateCheckSum(_buffer);
-
-  // NOTE
-  // You can't just be smart and do this in one line, because
-  // the pointer reference f*cks up.
-  // uint16_t paramLength = _buffer[3]<<8 + _buffer[4];
-  uint16_t paramLength = _buffer[3];
-  paramLength<<=8;
-  paramLength += _buffer[4];
-  uint8_t CRCpos = 5 + paramLength;
-
-  // Serial.print(CRC, HEX);
-  // Serial.print(":");
-  // Serial.println(_buffer[CRCpos], HEX);
-  return (CRC == _buffer[CRCpos]);
-}
-
-// Has any data been received from the reader?
-bool R200::dataAvailable(){
-  //Serial.println("Checking Data Available");
-  return _serial->available() >0;
-}
-
-/*
- * Dumps the most recently read UID to the serial output
- */ 
-void R200::dumpUIDToSerial(){
-  // Serial.print("Dumping UID...");
-  Serial.print("0x");
-  for (uint8_t i=0; i< uidLength; i++){
-    Serial.print(uid[i] < 0x10 ? "0" : "");
-    Serial.print(uid[i], HEX);
+bool R200::dataIsValid() const {
+  if (_receivedLength < 7 || _buffer[HEADER_POS] != FRAME_HEADER ||
+      _buffer[_receivedLength - 1] != FRAME_END) {
+    return false;
   }
-  // Serial.println(". Done.");
-}
 
-void R200::setTransmitPower(uint16_t power) {
-  uint8_t powerMSB = (power >> 8) & 0xFF;
-  uint8_t powerLSB = power & 0xFF;
-
-  uint8_t commandFrame[9] = {0};
-
-  commandFrame[0] = R200_FrameHeader;
-  commandFrame[1] = FrameType_Command;
-  commandFrame[2] = CMD_SetTransmitPower;
-  commandFrame[3] = 0x00;
-  commandFrame[4] = 0x02;
-  commandFrame[5] = powerMSB;
-  commandFrame[6] = powerLSB;
-  commandFrame[7] = calculateCheckSum(commandFrame);
-  commandFrame[8] = R200_FrameEnd;
-
-  _serial->write(commandFrame, 9);
-}
-
-void R200::dumpReceiveBufferToSerial(){
-  // Serial.print("Dumping buffer...");
-  Serial.print("0x");
-  for (uint8_t i=0; i< RX_BUFFER_LENGTH; i++){
-    Serial.print(_buffer[i] < 0x10 ? "0" : "");
-    Serial.print(_buffer[i], HEX);
+  const uint16_t parameterLength =
+      arrayToUint16(&_buffer[PARAM_LENGTH_MSB_POS]);
+  const uint16_t expectedLength = parameterLength + 7U;
+  if (expectedLength != _receivedLength || expectedLength > RX_BUFFER_LENGTH) {
+    return false;
   }
-  Serial.println(". Done.");
+
+  const uint16_t checksumPosition = PARAM_POS + parameterLength;
+  return checksumPosition < _receivedLength &&
+         calculateCheckSum(_buffer) == _buffer[checksumPosition];
 }
 
-// Parse data that has been placed in the receive buffer
-bool R200::parseReceivedData() {
-  switch(_buffer[R200_CommandPos]){
-    case CMD_GetModuleInfo:
+void R200::processReceivedData() {
+  const uint8_t command = _buffer[COMMAND_POS];
+  const uint16_t parameterLength =
+      arrayToUint16(&_buffer[PARAM_LENGTH_MSB_POS]);
+
+  if (command == CMD_SINGLE_POLL || command == CMD_MULTIPLE_POLL) {
+    // Resposta: RSSI(1) + PC(2) + EPC(n) + CRC da tag(2).
+    if (parameterLength < 5) {
+      _lastResult = RESULT_INVALID_FRAME;
+      _resultReady = true;
+      return;
+    }
+
+    const uint16_t rawEpcLength = parameterLength - 5U;
+    if (rawEpcLength == 0 || rawEpcLength > MAX_EPC_LENGTH ||
+        PARAM_POS + 3U + rawEpcLength > _receivedLength) {
+      _lastResult = RESULT_INVALID_FRAME;
+      _resultReady = true;
+      return;
+    }
+
+    memset(uid, 0, sizeof(uid));
+    memcpy(uid, &_buffer[PARAM_POS + 3], rawEpcLength);
+    uidLength = static_cast<uint8_t>(rawEpcLength);
+    _lastRssiRaw = _buffer[PARAM_POS];
+    _lastResult = RESULT_TAG;
+    _resultReady = true;
+    return;
+  }
+
+  if (command == CMD_EXECUTION_FAILURE && parameterLength >= 1) {
+    const uint8_t error = _buffer[PARAM_POS];
+    if (error == ERR_INVENTORY) {
+      memset(uid, 0, sizeof(uid));
+      uidLength = 0;
+      _lastResult = RESULT_NO_TAG;
+    } else {
+      _lastResult = RESULT_COMMAND_ERROR;
+    }
+    _resultReady = true;
+  }
+}
+
+void R200::dumpUIDToSerial() {
+  for (uint8_t index = 0; index < uidLength; ++index) {
+    if (uid[index] < 0x10) {
+      Serial.print('0');
+    }
+    Serial.print(uid[index], HEX);
+  }
+}
+
+void R200::poll() {
+  if (_serial == NULL) {
+    return;
+  }
+  uint8_t frame[7] = {FRAME_HEADER, FRAME_COMMAND, CMD_SINGLE_POLL,
+                      0x00,         0x00,          CMD_SINGLE_POLL,
+                      FRAME_END};
+  _serial->write(frame, sizeof(frame));
+}
+
+void R200::setTransmitPower(uint16_t powerCentiDbm) {
+  if (_serial == NULL) {
+    return;
+  }
+  uint8_t frame[9] = {0};
+  frame[0] = FRAME_HEADER;
+  frame[1] = FRAME_COMMAND;
+  frame[2] = CMD_SET_TRANSMIT_POWER;
+  frame[3] = 0x00;
+  frame[4] = 0x02;
+  frame[5] = static_cast<uint8_t>((powerCentiDbm >> 8) & 0xFF);
+  frame[6] = static_cast<uint8_t>(powerCentiDbm & 0xFF);
+  frame[7] = calculateCheckSum(frame);
+  frame[8] = FRAME_END;
+  _serial->write(frame, sizeof(frame));
+}
+
+bool R200::getWorkArea(uint8_t &region) {
+  uint8_t parameter = 0;
+  if (!queryParameter(CMD_GET_WORK_AREA, &parameter, 1)) {
+    return false;
+  }
+  region = parameter;
+  return true;
+}
+
+bool R200::getWorkingChannel(uint8_t &channelIndex) {
+  uint8_t parameter = 0;
+  if (!queryParameter(CMD_GET_WORKING_CHANNEL, &parameter, 1)) {
+    return false;
+  }
+  channelIndex = parameter;
+  return true;
+}
+
+bool R200::getTransmitPower(uint16_t &powerCentiDbm) {
+  uint8_t parameter[2] = {0};
+  if (!queryParameter(CMD_GET_TRANSMIT_POWER, parameter, 2)) {
+    return false;
+  }
+  powerCentiDbm = arrayToUint16(parameter);
+  return true;
+}
+
+bool R200::queryParameter(uint8_t command, uint8_t *parameter,
+                          uint16_t expectedLength,
+                          unsigned long timeoutMs) {
+  if (_serial == NULL || parameter == NULL) {
+    return false;
+  }
+
+  discardInput();
+  uint8_t frame[7] = {FRAME_HEADER, FRAME_COMMAND, command,
+                      0x00,         0x00,          command,
+                      FRAME_END};
+  _serial->write(frame, sizeof(frame));
+
+  const unsigned long start = millis();
+  while (millis() - start < timeoutMs) {
+    const unsigned long elapsed = millis() - start;
+    const unsigned long remaining = timeoutMs - elapsed;
+    if (!receiveData(remaining)) {
       return false;
-    case CMD_SinglePollInstruction:
-    case CMD_MultiplePollInstruction:
-      {
-      uint16_t paramLength = arrayToUint16(&_buffer[R200_ParamLengthMSBPos]);
-      if (paramLength < 5) {
+    }
+    if (!dataIsValid()) {
+      continue;
+    }
+
+    const uint16_t parameterLength =
+        arrayToUint16(&_buffer[PARAM_LENGTH_MSB_POS]);
+    if (_buffer[TYPE_POS] == FRAME_RESPONSE &&
+        _buffer[COMMAND_POS] == command) {
+      if (parameterLength != expectedLength) {
         return false;
       }
-      uint16_t rawEpcLength = paramLength - 5;
-      uint8_t epcLength = rawEpcLength > MAX_EPC_LENGTH ? MAX_EPC_LENGTH : rawEpcLength;
-      memset(uid, 0, sizeof uid);
-      memcpy(uid, &_buffer[R200_ParamPos + 3], epcLength);
-      uidLength = epcLength;
+      memcpy(parameter, &_buffer[PARAM_POS], expectedLength);
       return true;
-      }
-    case CMD_ExecutionFailure:
-      return false;
-    default:
-      return false;
+    }
+
+    // Uma notificação ou falha de inventário tardia pode preceder a resposta
+    // da consulta. Como o protocolo não possui ID de transação, ignore quadros
+    // de outro comando e continue aguardando o comando solicitado. Uma falha
+    // real da consulta terminará em false ao esgotar o timeout.
   }
   return false;
 }
 
-/*
- * Note that Arduino Serial.flush() method does not clear the incoming serial buffer - only the outgoing!
- */
-uint8_t R200::flush(){
-  uint8_t bytesDiscarded = 0;
-  while(_serial->available()){
-    _serial->read();
-    bytesDiscarded++;
+void R200::dumpLastFrameTo(Print &output) const {
+  for (uint16_t index = 0; index < _receivedLength; ++index) {
+    if (_buffer[index] < 0x10) {
+      output.print('0');
+    }
+    output.print(_buffer[index], HEX);
   }
-  return bytesDiscarded;
 }
 
-// Read incoming serial data sent by the reader
-// This could either be a response to a command sent, or a notification
-// (e.g. when set to automatic polling mode)
-// Returns true if a complete frame of data is read within the allotted timeout
-bool R200::receiveData(unsigned long timeOut){
-  //Serial.println("Receiving Data");
-  unsigned long startTime = millis();
-  uint8_t bytesReceived = 0;
-  // Clear the buffer
-  //memset(_buffer, 0, sizeof _buffer);
-  for (int i = 0; i < RX_BUFFER_LENGTH; i++) { _buffer[i] = 0; }
-  while ((millis() - startTime) < timeOut) {
-    while (_serial->available()) {
-      uint8_t b = _serial->read();
-      if(bytesReceived > RX_BUFFER_LENGTH - 1) {
-        Serial.print("Error: Max Buffer Length Exceeded!");
-        flush();
-        return false;
-      }
-      else {
-      _buffer[bytesReceived] = b;
-      }
-      bytesReceived++;
-      if (b == R200_FrameEnd) { break; }
-    }
+uint16_t R200::lastFrameLength() const { return _receivedLength; }
+
+void R200::setMultiplePollingMode(bool enable) {
+  if (_serial == NULL) {
+    return;
   }
-  if (bytesReceived > 1 && _buffer[0] == R200_FrameHeader && _buffer[bytesReceived - 1] == R200_FrameEnd) {
-      return true;
+
+  if (enable) {
+    uint8_t frame[10] = {FRAME_HEADER, FRAME_COMMAND, CMD_MULTIPLE_POLL,
+                         0x00,         0x03,          0x22,
+                         0xFF,         0xFF,          0x4A,
+                         FRAME_END};
+    _serial->write(frame, sizeof(frame));
   } else {
-      return false;
-  }
-  return false;
-}
-
-void R200::dumpModuleInfo(){
-  uint8_t commandFrame[8] = {0};
-  commandFrame[0] = R200_FrameHeader;
-  commandFrame[1] = FrameType_Command;
-  commandFrame[2] = CMD_GetModuleInfo;
-  commandFrame[3] = 0x00; // ParamLen MSB
-  commandFrame[4] = 0x01; // ParamLen LSB
-  commandFrame[5] = 0x00;  // Param
-  commandFrame[6] = 0x04; // LSB of commandFrame[2] + commandFrame[3] + commandFrame[4] + commandFrame[5]
-  commandFrame[7] = R200_FrameEnd;
-  _serial->write(commandFrame, 8);
-}
-
-/**
- * Send single poll command to the reader
- */
-void R200::poll(){
-  uint8_t commandFrame[7] = {0};
-  commandFrame[0] = R200_FrameHeader;
-  commandFrame[1] = FrameType_Command;
-  commandFrame[2] = CMD_SinglePollInstruction;
-  commandFrame[3] = 0x00; // ParamLen MSB
-  commandFrame[4] = 0x00; // ParamLen LSB
-  commandFrame[5] = 0x22;  // Checksum
-  commandFrame[6] = R200_FrameEnd;
-  _serial->write(commandFrame, 7);
-}
-
-void R200::setMultiplePollingMode(bool enable){
-  if(enable){
-    uint8_t commandFrame[10] = {0};
-    commandFrame[0] = R200_FrameHeader;
-    commandFrame[1] = FrameType_Command; //(0x00)
-    commandFrame[2] = CMD_MultiplePollInstruction; //0x27
-    commandFrame[3] = 0x00; // ParamLen MSB
-    commandFrame[4] = 0x03; // ParamLen LSB
-    commandFrame[5] = 0x22;  // Param (Reserved? Always 0x22 for this command)
-    commandFrame[6] = 0xFF;  // Param (Count of polls, MSB)
-    commandFrame[7] = 0xFF;  // Param (Count of polls, LSB)
-    commandFrame[8] = 0x4A; // LSB of commandFrame[2] + commandFrame[3] + commandFrame[4] + commandFrame[5] + commandFrame[6] + commandFrame[7] (full value is 0x024A)
-    commandFrame[9] = R200_FrameEnd;
-    _serial->write(commandFrame, 10);
-  }
-  else {
-    uint8_t commandFrame[7] = {0};
-    commandFrame[0] = R200_FrameHeader;
-    commandFrame[1] = FrameType_Command; //(0x00)
-    commandFrame[2] = CMD_StopMultiplePoll; //0x28
-    commandFrame[3] = 0x00; // ParamLen MSB
-    commandFrame[4] = 0x00; // ParamLen LSB
-    commandFrame[5] = 0x28; // LSB of commandFrame[2] + commandFrame[3] + commandFrame[4]
-    commandFrame[6] = R200_FrameEnd;
-    _serial->write(commandFrame, 7);
+    uint8_t frame[7] = {FRAME_HEADER, FRAME_COMMAND, CMD_STOP_MULTIPLE_POLL,
+                        0x00,         0x00,          CMD_STOP_MULTIPLE_POLL,
+                        FRAME_END};
+    _serial->write(frame, sizeof(frame));
   }
 }
 
-uint8_t R200::calculateCheckSum(uint8_t *buffer){
-  // Extract how many parameters there are in the buffer
-  uint16_t paramLength = buffer[3];
-  paramLength<<=8;
-  paramLength+= buffer[4];
-
-  // Checksum is calculated as the sum of all parameter bytes
-  // added to four control bytes at the start (type, command, and the 2-byte parameter length)
-  // Start from 1 to exclude frame header
-  uint16_t check = 0;
-  for(uint16_t i=1; i < paramLength+4+1; i++) {
-    check += buffer[i];
+void R200::dumpModuleInfo() {
+  if (_serial == NULL) {
+    return;
   }
-  // Now only return LSB
-  return (check & 0xff);
+  uint8_t frame[8] = {FRAME_HEADER, FRAME_COMMAND, CMD_GET_MODULE_INFO,
+                      0x00,         0x01,          0x00,
+                      0x04,         FRAME_END};
+  _serial->write(frame, sizeof(frame));
+}
 
-  /*
-  // This is an alternative checksum calculation sometimes used
-  uint16_t paramLength = *(buffer+3);
-  paramLength <<=8;
-  paramLength += *(buffer+4);
-
+uint8_t R200::calculateCheckSum(const uint8_t *buffer) const {
+  const uint16_t parameterLength =
+      arrayToUint16(&buffer[PARAM_LENGTH_MSB_POS]);
   uint16_t sum = 0;
-  for (int i=1; i<4+paramLength; i++) {
-    sum += buffer[i];
+  for (uint16_t index = 1; index < parameterLength + 5U; ++index) {
+    sum += buffer[index];
   }
-  return -sum;
-  */
+  return static_cast<uint8_t>(sum & 0xFF);
 }
 
-uint16_t R200::arrayToUint16(uint8_t *array){
-  uint16_t value = *array;
-  value <<=8;
-  value += *(array+1);
-  return value;
+uint16_t R200::arrayToUint16(const uint8_t *array) const {
+  return (static_cast<uint16_t>(array[0]) << 8) | array[1];
 }

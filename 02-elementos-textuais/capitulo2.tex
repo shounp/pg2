@@ -19,7 +19,7 @@ NFC opera em 13,56~MHz e utiliza acoplamento de campo próximo. Sua distância r
 
 No retroespalhamento, a etiqueta altera a impedância ligada à própria antena e, consequentemente, modula a parcela do sinal refletida ao interrogador. A distância útil depende do enlace de ida, que deve fornecer energia suficiente ao chip, e do enlace de retorno, que deve produzir sinal detectável no receptor. Potência configurada, ganho, perdas em cabos e conectores, sensibilidade da tag, polarização e multipercurso participam desse resultado \cite{wang2009uhf,thomas2012qam}.
 
-Por essa razão, ``alcance'' não é uma constante do leitor. Trata-se de uma propriedade do conjunto leitor--antena--tag em uma configuração e ambiente específicos. A distância máxima de uma leitura isolada também não equivale a alcance operacional; para inventário, interessa a distância na qual a identificação é repetível.
+Por essa razão, ``alcance'' não é uma constante do leitor. Trata-se de uma propriedade do conjunto formado por leitor, antena e tag em uma configuração e ambiente específicos. A distância máxima de uma leitura isolada também não equivale a alcance operacional; para inventário, interessa a distância na qual a identificação é repetível.
 
 \section{Interface aérea e regulamentação}
 
@@ -31,7 +31,7 @@ A compatibilidade com esse protocolo é o critério principal para interoperabil
 
 \subsection{Uso do espectro no Brasil}
 
-No Brasil, equipamentos RFID enquadram-se nos requisitos de radiação restrita. O Ato Anatel n.\ 14.448/2017, em sua redação consolidada, apresenta faixas e limites aplicáveis a sistemas RFID, incluindo 902--907,5~MHz e 915--928~MHz para interrogadores UHF \cite{anatelrfid}. A faixa ampla de 860--960~MHz impressa em antenas e etiquetas indica cobertura de projeto, mas não autoriza a transmissão em todo esse intervalo.
+No Brasil, equipamentos RFID enquadram-se nos requisitos de radiação restrita. O Ato Anatel n.\ 14.448/2017, em sua redação consolidada, apresenta faixas e limites aplicáveis a sistemas RFID, incluindo de 902 a 907,5~MHz e de 915 a 928~MHz para interrogadores UHF \cite{anatelrfid}. A faixa ampla de 860 a 960~MHz impressa em antenas e etiquetas indica cobertura de projeto, mas não autoriza a transmissão em todo esse intervalo.
 
 O módulo deve ser configurado para a região correta e o equipamento utilizado em uma implantação deve ser homologado ou integrar produto cuja certificação seja aceita pela Anatel. Ensaios acadêmicos não justificam operar em canais inadequados ou exceder os limites de emissão. A configuração regional deve ser registrada em cada experimento, assim como potência, antena e ambiente.
 
@@ -56,63 +56,78 @@ Algoritmos acadêmicos podem melhorar a escolha de parâmetros ou substituir est
 
 \subsection{Ganho e largura de feixe}
 
-O ganho em dBi expressa a concentração da radiação em determinadas direções em relação a uma fonte isotrópica. Ganho maior tende a ampliar a distância no lóbulo principal, mas geralmente reduz a largura de feixe. Para inventariar uma sala, uma zona mais larga pode ser mais útil que a maior distância possível; para um ponto fixo em uma porta, um feixe controlado reduz leituras de áreas adjacentes.
+O ganho em dBi expressa a concentração da radiação em determinadas direções em relação a uma fonte isotrópica. Em geral, maior ganho concentra mais energia no lóbulo principal, podendo ampliar o alcance no eixo de máxima radiação em troca de menor cobertura angular \cite{rao2005uhf}. Para inventariar uma sala, uma zona mais larga pode ser mais útil que a maior distância possível; para um ponto fixo em uma porta, um feixe controlado reduz leituras de áreas adjacentes.
 
-A antena utilizada no protótipo é a Airplux APCA8090. O fabricante informa operação nas frequências centrais de 915~MHz e 866,5~MHz, ganho de 5~dBi, polarização linear, razão axial menor ou igual a 5~dB, impedância de 50~$\Omega$, conector SMA ou customizado, elemento cerâmico de 80~$\times$~80~$\times$~7~mm e placa de 90~$\times$~90~mm \cite{airplux2026apca8090}. A página técnica não apresenta diagrama de irradiação, largura de feixe, relação frente-costas ou VSWR; por isso, esses parâmetros devem ser tratados como pendentes até o envio de documentação adicional pelo fornecedor ou até a caracterização experimental do conjunto.
+Ganho, polarização e cobertura espacial são propriedades diferentes. Polarização linear ou circular descreve a trajetória do campo elétrico; cobertura direcional ou omnidirecional descreve como a potência é distribuída no espaço. Portanto, ``linear'' não é sinônimo de ``direcional'', assim como ``omnidirecional'' não é o oposto de ``linear''. Uma antena omnidirecional pode, inclusive, possuir polarização linear.
+
+A antena especificada na arquitetura e adotada nos ensaios é a Airplux APCA8090. A página do fabricante lista as frequências centrais de 915~MHz e 866,5~MHz, ganho de 5~dBi, polarização linear, razão axial menor ou igual a 5~dB, impedância de 50~$\Omega$, conector SMA ou customizado, elemento cerâmico de 80~$\times$~80~$\times$~7~mm e placa de 90~$\times$~90~mm \cite{airplux2026apca8090}. A documentação consultada não torna inequívoco se 915~MHz e 866,5~MHz correspondem a variantes distintas, nem informa largura de banda, VSWR, largura de feixe ou relação entre frente e costas. Assim, esses valores constituem referência nominal, não comprovação da resposta da unidade utilizada em toda a faixa de operação.
 
 \subsection{Polarização e orientação}
 
-Antenas lineares concentram o campo em um plano e podem oferecer bom alcance quando a orientação das tags é controlada. Como a antena adotada no protótipo é linear, o ensaio precisa registrar a orientação da AD-239 M730 em relação à APCA8090. Sem esse controle, uma falha de leitura pode ser confundida com limitação de alcance, quando na verdade decorre de desalinhamento de polarização.
+Em uma antena de polarização linear, o vetor de campo elétrico mantém uma orientação predominante. Quando a antena da etiqueta também é linear, o desalinhamento angular entre as polarizações reduz o acoplamento e pode diminuir a probabilidade de leitura. Por isso, a orientação da AD-239 M730 em relação à APCA8090 foi incluída como variável experimental e aparece nos ensaios de orientação do conjunto.
 
-Como a APCA8090 é especificada como antena linear, a orientação relativa entre antena do leitor e antena da etiqueta passa a ser uma variável crítica do experimento. A rotação de uma mesma tag em 0, 45 e 90 graus permite observar a dependência angular. Uma queda acentuada em orientação ortogonal é esperada em sistemas lineares, embora a caracterização completa do lóbulo de radiação ainda dependa do diagrama do fabricante ou de instrumentação de RF.
+Como a APCA8090 é especificada como antena de polarização linear, a orientação relativa entre antena do leitor e antena da etiqueta é uma variável potencialmente crítica. Os ensaios de $0^\circ$, $45^\circ$ e $90^\circ$ avaliam essa dependência nas condições específicas da campanha.
+
+Quando a orientação das etiquetas não é controlada, a intervenção mais diretamente relacionada ao problema é empregar polarização circular ou diversidade de polarização \cite{times72022polarization}. Um padrão omnidirecional trata outra dimensão do projeto: pode ampliar a cobertura no plano azimutal e reduzir a necessidade de apontamento, mas não elimina por si só a incompatibilidade de polarização. Como antenas não foram comparadas nesta campanha, uma eventual vantagem omnidirecional para a varredura portátil permanece hipótese a testar. Maior cobertura ao redor do leitor também pode elevar leituras externas e a exposição ao multipercurso; para pontos fixos, o controle espacial de uma antena direcional pode continuar preferível.
 
 \subsection{Multipercurso e diversidade}
 
-Em ambientes fechados, o sinal transmitido pelo leitor não se propaga apenas pelo caminho direto entre a antena e a etiqueta. Parte da energia eletromagnética é refletida por paredes, piso, teto, móveis, equipamentos e estruturas metálicas, formando múltiplos caminhos de propagação. Cada componente refletida percorre uma distância diferente e chega à tag com amplitude e fase próprias. A superposição dessas componentes pode produzir interferência construtiva, aumentando a potência recebida, ou interferência destrutiva, reduzindo o campo em pontos específicos da área de leitura.
+Em ambientes fechados, o sinal transmitido pelo leitor não se propaga somente pelo caminho direto entre a antena e a etiqueta. Parte da energia é refletida por paredes, piso, teto, móveis, equipamentos e estruturas metálicas, formando componentes que percorrem distâncias diferentes e chegam à tag com amplitudes e fases próprias. A superposição pode ser construtiva, elevando o campo resultante, ou destrutiva, reduzindo-o em pontos específicos da zona de leitura.
 
-De forma conceitual, o campo total recebido pela etiqueta pode ser representado pela soma entre a componente direta e as componentes refletidas:
+Tomando a fase do caminho direto como referência, uma representação fasorial escalar, complexa e de banda estreita da componente do campo alinhada à polarização da tag é
 
 \begin{equation}
-    E_{\text{total}} = E_{\text{direto}} + \sum_{i=1}^{N} E_i e^{-j\phi_i},
-    \label{eq:campo-total-multipercurso}
+    \widetilde{E}_{\mathrm{tot}}
+    = E_{0} + \sum_{i=1}^{N} E_i e^{-j\phi_i},
+    \label{eq:campo-multipercurso}
 \end{equation}
 
-\noindent em que $E_{\text{direto}}$ representa o caminho dominante, $E_i$ representa a amplitude da $i$-ésima componente refletida e $\phi_i$ representa a fase acumulada nesse percurso. Quando as componentes chegam aproximadamente em oposição de fase, o resultado pode se aproximar de zero, formando nulos de cobertura. Assim, uma etiqueta pode estar dentro do alcance estimado por modelos de perda em espaço livre e, ainda assim, não receber potência suficiente para ativar o chip ou responder de forma repetível.
+em que $E_0$ representa a amplitude do caminho dominante, $E_i$ é a amplitude da $i$-ésima componente refletida e $\phi_i$ é sua fase relativa. A potência disponível na antena da etiqueta depende, entre outros fatores, de $\lvert\widetilde{E}_{\mathrm{tot}}\rvert^2$, da polarização e do casamento de impedâncias. Assim, componentes aproximadamente em oposição de fase podem produzir um nulo local e reduzir a potência abaixo do limiar necessário para energizar o chip, mesmo que a tag esteja dentro de uma distância que seria considerada adequada por um modelo de espaço livre. Em RFID UHF passivo, essa representação ilustra principalmente o enlace de ida, responsável por energizar a tag; a leitura depende também do enlace de retorno por retroespalhamento, igualmente sujeito à propagação. A \autoref{eq:campo-multipercurso} é apenas conceitual: uma análise eletromagnética completa exigiria campos vetoriais, coeficientes de reflexão, geometria e propriedades dos materiais.
 
-\citeonline{sabesan2014diversity} adotam esse problema como motivação para um sistema RFID UHF passivo de ampla cobertura baseado em diversidade de antenas, saltos de fase e saltos de frequência. A modelagem por desvanecimento Rician é adequada nesse contexto porque considera a presença simultânea de uma componente dominante de linha de visada e de múltiplas componentes refletidas. Conceitualmente, o canal pode ser descrito como a combinação ponderada entre a parcela dominante e a parcela de multipercurso:
+Quando existe uma componente dominante acompanhada por muitas componentes espalhadas, o desvanecimento de pequena escala pode ser representado conceitualmente por um canal Rician. Com potência média normalizada,
 
 \begin{equation}
-    h = \sqrt{\frac{K}{K+1}}h_{\text{LOS}} + \sqrt{\frac{1}{K+1}}h_{\text{multipercurso}},
+    h = \sqrt{\frac{K}{K+1}}\,e^{j\phi_0}
+        + \sqrt{\frac{1}{K+1}}\,g,
+    \qquad g \sim \mathcal{CN}(0,1),
     \label{eq:canal-rician}
 \end{equation}
 
-\noindent em que $h_{\text{LOS}}$ é a componente de linha de visada, $h_{\text{multipercurso}}$ agrupa as componentes refletidas e espalhadas, e $K$ expressa a razão entre a potência do caminho dominante e a potência das componentes espalhadas. Caso a linha de visada estivesse totalmente bloqueada e não existisse componente dominante, um modelo Rayleigh poderia ser mais apropriado; entretanto, em uma sala de inventário com leitor apontado para os bens, a componente direta permanece relevante.
+em que a primeira parcela representa a componente dominante, $g$ é uma variável gaussiana complexa normalizada que representa a parcela difusa e $K$ é a razão linear entre a potência dominante e a potência espalhada. Um valor de $K$ expresso em decibéis precisaria ser convertido antes de ser usado na \autoref{eq:canal-rician}. Na ausência de componente dominante, o caso limite $K=0$ conduz ao modelo Rayleigh para a envoltória, desde que sejam válidas as hipóteses estatísticas de espalhamento. Esses modelos descrevem distribuições possíveis do canal; não constituem, por si só, prova de que o laboratório deste trabalho apresentou uma distribuição Rician ou Rayleigh.
 
-A técnica de diversidade explorada por \citeonline{sabesan2014diversity} é importante porque a posição dos nulos depende das fases relativas entre os caminhos. Para um percurso de comprimento $d_i$, a fase acumulada pode ser relacionada ao comprimento de onda por:
+A fase acumulada em um percurso depende de seu comprimento e da frequência. Para o $i$-ésimo caminho, pode-se escrever
 
 \begin{equation}
-    \phi_i = \frac{2\pi d_i}{\lambda}.
+    \phi_i = \frac{2\pi(d_i-d_0)}{\lambda} + \theta_i
+           = \frac{2\pi f(d_i-d_0)}{c} + \theta_i
+           \pmod{2\pi},
     \label{eq:fase-percurso}
 \end{equation}
 
-\noindent Como $\lambda = c/f$, alterações na frequência deslocam as fases relativas das componentes refletidas. De modo semelhante, saltos de fase e o uso de antenas em posições diferentes modificam a distribuição espacial dos nulos. Uma tag que esteja em uma zona de interferência destrutiva em determinada configuração pode receber potência suficiente em outra. No protótipo deste trabalho, essa fundamentação justifica a preocupação com repetibilidade, altura, distância, orientação e ambiente de teste. O YPD-R200 adquirido possui uma única conexão SMA; portanto, a implementação completa de diversidade com múltiplas antenas não faz parte do escopo prático, mas o fenômeno de multipercurso deve ser considerado na interpretação dos resultados.
+em que $d_i$ é o comprimento do percurso refletido, $d_0$ é o comprimento do caminho dominante, $\lambda=c/f$ é o comprimento de onda e $\theta_i$ reúne as mudanças adicionais de fase introduzidas pelas reflexões e pelas antenas. Alterar a frequência modifica as fases relativas dos caminhos; deslocar a antena ou a tag modifica seus comprimentos relativos; e utilizar antenas em posições distintas modifica a distribuição espacial dos nulos. Em uma arquitetura com múltiplas antenas, também é possível variar a fase relativa entre os caminhos de alimentação. Uma mudança de fase comum aplicada a uma única antena, entretanto, não altera por si só a interferência relativa entre os percursos.
+
+\citeonline{sabesan2014diversity} modelaram o desvanecimento Rician e adotaram o multipercurso como motivação para um sistema RFID UHF passivo de ampla cobertura que combina duas ou mais antenas espacialmente separadas com saltos controlados de fase e de frequência. A finalidade da diversidade é oferecer configurações de canal distintas: uma tag situada em um nulo em determinada frequência, posição de antena ou relação de fases pode receber potência suficiente em outra configuração. Isso reduz a dependência de um único estado do canal, mas não garante a eliminação de todos os nulos. A arquitetura daquele estudo empregou um transceptor Impinj R2000, que não deve ser confundido com o módulo YPD-R200 utilizado neste trabalho.
+
+No protótipo deste trabalho, essa fundamentação justifica padronizar e registrar a geometria e avaliar repetibilidade em vez de uma leitura isolada. A altura foi mantida em 150~cm nos ensaios de distância, orientação e material, mas não foi variada como fator experimental. O YPD-R200 adquirido possui uma única conexão SMA; portanto, a diversidade espacial completa com múltiplas antenas exigiria chaveamento externo, mais de um módulo ou outra classe de leitor. A campanha não mediu resposta impulsiva, fase, fator $K$ ou coeficientes de reflexão, e o código do Arduino não estimou nem compensou o canal. A região, os canais efetivos e o salto de frequência (\textit{Frequency-Hopping Spread Spectrum}, FHSS) também não foram confirmados durante a coleta; portanto, eventual salto de frequência do módulo não é apresentado como implementação da técnica de \citeonline{sabesan2014diversity}. As repetições e o deslocamento do leitor no inventário permitiram observar o desempenho agregado em um cenário institucional realista. Nesse contexto, o multipercurso integra as condições normais de operação; ele permanece uma explicação concorrente para a variabilidade, e não uma variável quantificada separadamente.
 
 \section{Etiqueta AD-239 M730}
 
 Uma etiqueta completa contém o circuito integrado e uma antena, formando o \textit{inlay}; o conjunto pode ainda receber adesivo, substrato e acabamento de etiqueta. Informar apenas o chip é insuficiente para prever alcance, pois o desempenho prático depende também da antena do inlay, da superfície de instalação e da orientação em relação à antena do leitor \cite{rao2005uhf}.
 
-A AD-239 M730, adotada como única etiqueta de teste deste trabalho, utiliza o chip Impinj M730, opera em UHF entre 860 e 960~MHz, é compatível com ISO/IEC 18000-63 e EPC Class 1 Gen2, possui 128 bits de memória EPC, TID de 96 bits e número serial único de 48 bits embutido no TID \cite{avery2022ad239m730}. Sua antena possui 70~$\times$~14,5~mm e o produto é fornecido em formatos como \textit{dry inlay}, \textit{wet inlay} e etiqueta.
+A AD-239 M730, adotada como etiqueta de referência do trabalho, utiliza o chip Impinj M730, opera em UHF entre 860 e 960~MHz, é compatível com ISO/IEC 18000-63 e EPC Class 1 Gen2, possui 128 bits de memória EPC, TID de 96 bits e número serial único de 48 bits embutido no TID \cite{avery2022ad239m730}. Sua antena possui 70~$\times$~14,5~mm e o produto é fornecido em formatos como \textit{dry inlay}, \textit{wet inlay} e etiqueta.
 
-O datasheet classifica a AD-239 M730 como solução para superfícies não metálicas, o que a torna adequada para ensaios em papel, plástico, madeira e objetos sem grande influência condutiva. Por esse motivo, aplicações diretamente sobre metal devem ser tratadas como condição crítica de degradação, e não como uso recomendado da etiqueta.
+O datasheet classifica a AD-239 M730 como solução para superfícies não metálicas. No ensaio específico de material, o mesmo exemplar TAG1 foi avaliado sobre papelão, plástico, madeira, vidro, metal direto e metal separado por um espaçador plástico de 10~mm. O uso do mesmo exemplar reduz a variação entre etiquetas dentro desse bloco, mas limita a generalização para outros exemplares e geometrias de aplicação. Nos ensaios de distância e orientação, papelão, madeira e plástico permaneceram associados, respectivamente, a TAG1, TAG2 e TAG3; por isso, esses suportes não foram avaliados como fatores independentes nesses dois blocos. A \autoref{tab:ad239m730} reúne as especificações relevantes para esse recorte.
 
 \begin{table}[htbp]
     \centering
+    \caption{Especificações relevantes da etiqueta AD-239 M730.}
+    \label{tab:ad239m730}
     \footnotesize
     \begin{tabularx}{\textwidth}{p{4.0cm}X}
         \toprule
         \textbf{Parâmetro} & \textbf{Especificação da AD-239 M730} \\
         \midrule
-        Faixa de frequência & UHF 860--960~MHz. \\
+        Faixa de frequência & UHF de 860 a 960~MHz. \\
         Circuito integrado & Impinj M730. \\
         Padrão de operação & ISO/IEC 18000-63 e EPC Class 1 Gen2. \\
         Memória EPC & 128 bits. \\
@@ -123,21 +138,18 @@ O datasheet classifica a AD-239 M730 como solução para superfícies não metá
         Limitação considerada & Aplicação direta sobre metal pode reduzir ou impedir a leitura, devendo ser avaliada apenas como condição crítica. \\
         \bottomrule
     \end{tabularx}
-    \caption[Especificações da AD-239 M730]{Especificações relevantes da etiqueta AD-239 M730 \cite{avery2022ad239m730}.}
-    \label{tab:ad239m730}
+    \fonte{\citeonline{avery2022ad239m730}.}
 \end{table}
 
-Para bens metálicos, uma etiqueta convencional pode ser dessintonizada pela superfície condutora. Como a AD-239 M730 é especificada para uso não metálico, ela não deve ser apresentada como solução definitiva para computadores, armários, instrumentos com carcaça metálica ou outros bens condutivos. Neste trabalho, o metal entra apenas como condição de ensaio para medir degradação da tag adotada.
+Para bens metálicos, uma etiqueta convencional pode ser dessintonizada pela superfície condutora. Como a AD-239 M730 é especificada para uso não metálico, ela não deve ser apresentada como solução definitiva para computadores, armários, instrumentos com carcaça metálica ou outros bens condutivos. Neste trabalho, o metal entra como condição crítica de degradação observada no ensaio.
 
 \section{Módulo YPD-R200}
 
-O YPD-R200 é um módulo embarcado compatível com ISO 18000-6C/EPC Class 1 Gen2. O datasheet do fabricante informa alimentação entre 3,6 e 5,5~V, UART de até 115200~bit/s, dimensões de 53~$\times$~33~mm e versões com potência máxima de 20 ou 26~dBm \cite{yanpodo2021r200}. A variante de 26~dBm apresenta corrente de pico informada em aproximadamente 380~mA.
+O YPD-R200 é um módulo embarcado compatível com ISO 18000-6C/EPC Class 1 Gen2. O datasheet do fabricante informa alimentação entre 3,6 e 5,5~V, UART de até 115200~bit/s, dimensões de 53~$\times$~33~mm e versões com potência máxima de 20 ou 26~dBm \cite{yanpodo2021r200}. A variante empregada possui potência máxima nominal de 26~dBm, equivalente a aproximadamente 398~mW de RF no conector do módulo, e corrente de pico informada em aproximadamente 380~mA. Com uma antena de ganho nominal de 5~dBi, a potência isotrópica radiada equivalente (EIRP) teórica seria de até 31~dBm antes de descontar as perdas de cabo e conectores. Esse valor é uma estimativa de orçamento de enlace, não uma potência irradiada medida nem uma comprovação de conformidade regulatória.
 
-Para essa variante, o fabricante apresenta alcance típico de 3~m em espaço aberto com antena cerâmica de 45~$\times$~45~mm. Esse valor é mais defensável que alegações genéricas de 15 ou 20~m encontradas em páginas de terceiros. A APCA8090 possui ganho nominal maior e dimensões superiores às da antena usada no exemplo do datasheet do módulo, mas somente o experimento poderá estabelecer a distância repetível do conjunto YPD-R200--APCA8090--AD-239 M730.
+Para essa variante, o fabricante apresenta alcance típico de 3~m em espaço aberto com antena cerâmica de 45~$\times$~45~mm. Esse valor é mais defensável que alegações genéricas de 15 ou 20~m encontradas em páginas de terceiros. A APCA8090 possui ganho nominal maior e dimensões superiores às da antena usada no exemplo do datasheet, mas os ensaios deste trabalho não estabelecem o alcance real absoluto; eles apenas mostram o comportamento do conjunto nas distâncias testadas.
 
-O protocolo serial utiliza quadros delimitados por \texttt{0xAA} e \texttt{0xDD}. Entre eles aparecem tipo, comando, tamanho dos parâmetros, parâmetros e soma de verificação. O comando \texttt{0x22} executa uma consulta de inventário, \texttt{0x27} inicia múltiplas consultas e \texttt{0x28} interrompe essa operação.
-
-O comando \texttt{0xB6} configura a potência \cite{yanpodo2016protocol}. As notificações incluem RSSI, PC, EPC e CRC da tag.
+O protocolo serial utiliza quadros delimitados por \texttt{0xAA} e \texttt{0xDD}. Entre eles aparecem tipo, comando, tamanho dos parâmetros, parâmetros e soma de verificação. O comando \texttt{0x22} executa uma consulta de inventário, \texttt{0x27} inicia múltiplas consultas e \texttt{0x28} interrompe essa operação. Além dos comandos de inventário, o comando \texttt{0xB6} permite configurar a potência de transmissão, e as notificações retornadas incluem RSSI, PC, EPC e CRC da tag \cite{yanpodo2016protocol}.
 
 \section{Arquiteturas de aplicação}
 

@@ -1,0 +1,47 @@
+# 0) Preserve o bloco de evidência de região, canal e potência.
+VERIFY_RF,20
+
+# 1) Isole cada tag, envie POLL, copie o EPC e substitua os exemplos abaixo.
+TAG,1,COLE_O_EPC_DA_TAG1
+TAG,2,COLE_O_EPC_DA_TAG2
+TAG,3,COLE_O_EPC_DA_TAG3
+TAG,4,COLE_O_EPC_DA_TAG4
+TAG,5,COLE_O_EPC_DA_TAG5
+TAGS
+
+# 2) ALCANCE — alturas 150 cm, orientação 0°, suporte de papelão.
+RUN,ALCANCE,0.5m,1,5
+RUN,ALCANCE,0.5m,2,5
+RUN,ALCANCE,0.5m,3,5
+RUN,ALCANCE,1.0m,1,5
+RUN,ALCANCE,1.0m,2,5
+RUN,ALCANCE,1.0m,3,5
+RUN,ALCANCE,1.5m,1,5
+RUN,ALCANCE,1.5m,2,5
+RUN,ALCANCE,1.5m,3,5
+RUN,ALCANCE,2.0m,1,5
+RUN,ALCANCE,2.0m,2,5
+RUN,ALCANCE,2.0m,3,5
+
+# 3) ORIENTAÇÃO — distância 1,5 m e suporte de papelão.
+RUN,ORIENTACAO,0graus,1,5
+RUN,ORIENTACAO,0graus,2,5
+RUN,ORIENTACAO,0graus,3,5
+RUN,ORIENTACAO,45graus,1,5
+RUN,ORIENTACAO,45graus,2,5
+RUN,ORIENTACAO,45graus,3,5
+RUN,ORIENTACAO,90graus,1,5
+RUN,ORIENTACAO,90graus,2,5
+RUN,ORIENTACAO,90graus,3,5
+
+# 4) MATERIAL — sempre TAG1, distância 1,5 m e orientação 0°.
+RUN,MATERIAL,PAPELAO,1,5
+RUN,MATERIAL,METAL_DIRETO,1,5
+RUN,MATERIAL,METAL_ESPACADOR_10mm,1,5
+
+# 5) INVENTÁRIO — cinco tags, mesmo percurso e janelas de 25 s.
+INV,1,25,5
+INV,2,25,5
+INV,3,25,5
+INV,4,25,5
+INV,5,25,5
