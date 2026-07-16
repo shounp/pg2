@@ -27,6 +27,11 @@ class R200 {
   void poll();
   void setMultiplePollingMode(bool enable = true);
   void setTransmitPower(uint16_t powerCentiDbm);
+  bool getWorkArea(uint8_t &region);
+  bool getWorkingChannel(uint8_t &channelIndex);
+  bool getTransmitPower(uint16_t &powerCentiDbm);
+  void dumpLastFrameTo(Print &output) const;
+  uint16_t lastFrameLength() const;
   void dumpModuleInfo();
   void dumpUIDToSerial();
   bool dataAvailable() const;
@@ -47,6 +52,9 @@ class R200 {
 
   bool receiveData(unsigned long timeoutMs = 500);
   bool dataIsValid() const;
+  bool queryParameter(uint8_t command, uint8_t *parameter,
+                      uint16_t expectedLength,
+                      unsigned long timeoutMs = 750);
   void processReceivedData();
   uint8_t calculateCheckSum(const uint8_t *buffer) const;
   uint16_t arrayToUint16(const uint8_t *array) const;
@@ -76,7 +84,10 @@ class R200 {
     CMD_SINGLE_POLL = 0x22,
     CMD_MULTIPLE_POLL = 0x27,
     CMD_STOP_MULTIPLE_POLL = 0x28,
+    CMD_GET_WORK_AREA = 0x08,
+    CMD_GET_WORKING_CHANNEL = 0xAA,
     CMD_SET_TRANSMIT_POWER = 0xB6,
+    CMD_GET_TRANSMIT_POWER = 0xB7,
     CMD_EXECUTION_FAILURE = 0xFF
   };
 

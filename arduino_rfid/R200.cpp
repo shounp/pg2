@@ -208,6 +208,87 @@ void R200::setTransmitPower(uint16_t powerCentiDbm) {
   _serial->write(frame, sizeof(frame));
 }
 
+bool R200::getWorkArea(uint8_t &region) {
+  uint8_t parameter = 0;
+  if (!queryParameter(CMD_GET_WORK_AREA, &parameter, 1)) {
+    return false;
+  }
+  region = parameter;
+  return true;
+}
+
+bool R200::getWorkingChannel(uint8_t &channelIndex) {
+  uint8_t parameter = 0;
+  if (!queryParameter(CMD_GET_WORKING_CHANNEL, &parameter, 1)) {
+    return false;
+  }
+  channelIndex = parameter;
+  return true;
+}
+
+bool R200::getTransmitPower(uint16_t &powerCentiDbm) {
+  uint8_t parameter[2] = {0};
+  if (!queryParameter(CMD_GET_TRANSMIT_POWER, parameter, 2)) {
+    return false;
+  }
+  powerCentiDbm = arrayToUint16(parameter);
+  return true;
+}
+
+bool R200::queryParameter(uint8_t command, uint8_t *parameter,
+                          uint16_t expectedLength,
+                          unsigned long timeoutMs) {
+  if (_serial == NULL || parameter == NULL) {
+    return false;
+  }
+
+  discardInput();
+  uint8_t frame[7] = {FRAME_HEADER, FRAME_COMMAND, command,
+                      0x00,         0x00,          command,
+                      FRAME_END};
+  _serial->write(frame, sizeof(frame));
+
+  const unsigned long start = millis();
+  while (millis() - start < timeoutMs) {
+    const unsigned long elapsed = millis() - start;
+    const unsigned long remaining = timeoutMs - elapsed;
+    if (!receiveData(remaining)) {
+      return false;
+    }
+    if (!dataIsValid()) {
+      continue;
+    }
+
+    const uint16_t parameterLength =
+        arrayToUint16(&_buffer[PARAM_LENGTH_MSB_POS]);
+    if (_buffer[TYPE_POS] == FRAME_RESPONSE &&
+        _buffer[COMMAND_POS] == command) {
+      if (parameterLength != expectedLength) {
+        return false;
+      }
+      memcpy(parameter, &_buffer[PARAM_POS], expectedLength);
+      return true;
+    }
+
+    // Uma notificação ou falha de inventário tardia pode preceder a resposta
+    // da consulta. Como o protocolo não possui ID de transação, ignore quadros
+    // de outro comando e continue aguardando o comando solicitado. Uma falha
+    // real da consulta terminará em false ao esgotar o timeout.
+  }
+  return false;
+}
+
+void R200::dumpLastFrameTo(Print &output) const {
+  for (uint16_t index = 0; index < _receivedLength; ++index) {
+    if (_buffer[index] < 0x10) {
+      output.print('0');
+    }
+    output.print(_buffer[index], HEX);
+  }
+}
+
+uint16_t R200::lastFrameLength() const { return _receivedLength; }
+
 void R200::setMultiplePollingMode(bool enable) {
   if (_serial == NULL) {
     return;

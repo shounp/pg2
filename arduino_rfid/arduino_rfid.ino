@@ -20,7 +20,7 @@ const uint8_t MAX_REGISTERED_TAGS = 5;
 const uint8_t MAX_INVENTORY_TAGS = 10;
 const uint8_t COMMAND_BUFFER_LENGTH = 120;
 
-uint16_t currentPowerCentiDbm = 2600;
+uint16_t requestedPowerCentiDbm = 2600;
 char commandBuffer[COMMAND_BUFFER_LENGTH];
 uint8_t commandLength = 0;
 
@@ -194,6 +194,7 @@ void printHelp() {
   Serial.println(F("# INV,<RODADA>,<DURACAO_S>,<TAGS_ESPERADAS>"));
   Serial.println(F("# POLL"));
   Serial.println(F("# POWER,<CENTIDBM>   exemplo: POWER,2600"));
+  Serial.println(F("# VERIFY_RF,<AMOSTRAS_1_A_20>   exemplo: VERIFY_RF,10"));
   Serial.println(F("# INFO"));
   Serial.println(F("# HELP"));
   Serial.println(F("# Exemplos:"));
@@ -204,16 +205,201 @@ void printHelp() {
 }
 
 void printInfo() {
-  Serial.print(F("INFO,power_centidbm_nominal,"));
-  Serial.println(currentPowerCentiDbm);
+  Serial.print(F("INFO,power_setpoint_requested_centidbm,"));
+  Serial.println(requestedPowerCentiDbm);
+  Serial.println(F("INFO,power_range_assumes,RPEUM_26_CONFIRM_PHYSICAL_VARIANT"));
   Serial.println(F("INFO,rfid_uart_baud,115200"));
   Serial.println(F("INFO,pc_serial_baud,115200"));
   Serial.println(F("INFO,controlled_window_ms,3000"));
   Serial.println(F("INFO,poll_interval_ms,500"));
   Serial.println(F("INFO,rssi,RAW_NAO_CONVERTIDO"));
-  Serial.println(F("INFO,power_readback,NAO_IMPLEMENTADO"));
-  Serial.println(F("INFO,region_channel_fhss,NAO_VERIFICADO_PELO_CODIGO"));
+  Serial.println(F("INFO,rf_readback,USE_VERIFY_RF"));
+  Serial.println(F("INFO,fhss_readback,NAO_EXISTE_NO_PROTOCOLO_V2_3_3"));
   Serial.println(F("INFO,software_serial_115200,VALIDAR_PERDAS"));
+}
+
+void printRegionName(uint8_t region) {
+  switch (region) {
+    case 0x01:
+      Serial.print(F("CHINA_900"));
+      break;
+    case 0x02:
+      Serial.print(F("US_FABRICANTE"));
+      break;
+    case 0x03:
+      Serial.print(F("EUROPA"));
+      break;
+    case 0x04:
+      Serial.print(F("CHINA_800"));
+      break;
+    case 0x06:
+      Serial.print(F("COREIA"));
+      break;
+    default:
+      Serial.print(F("DESCONHECIDA"));
+      break;
+  }
+}
+
+bool isKnownRegion(uint8_t region) {
+  return region == 0x01 || region == 0x02 || region == 0x03 ||
+         region == 0x04 || region == 0x06;
+}
+
+void printUsFrequencyMHz(uint8_t channelIndex) {
+  // Grade definida pelo protocolo para a região 0x02:
+  // f_MHz = 902,25 + 0,5 * índice.
+  const uint16_t quarterMHz = 3609U + 2U * channelIndex;
+  Serial.print(quarterMHz / 4U);
+  Serial.print('.');
+  const uint8_t hundredths = (quarterMHz % 4U) * 25U;
+  if (hundredths < 10) {
+    Serial.print('0');
+  }
+  Serial.print(hundredths);
+}
+
+void printLastRfFrame() {
+  if (r200.lastFrameLength() == 0) {
+    Serial.print(F("NA"));
+  } else {
+    r200.dumpLastFrameTo(Serial);
+  }
+}
+
+void verifyRfConfiguration(uint8_t samples) {
+  Serial.println(F("# RF_VERIFY_START"));
+  Serial.println(F("RF_TX,GET_REGION,AA0008000008DD"));
+
+  uint8_t region = 0;
+  const bool regionOk = r200.getWorkArea(region);
+  Serial.print(F("RF_RX,GET_REGION,"));
+  Serial.print(regionOk ? F("OK,") : F("FALHA,"));
+  printLastRfFrame();
+  Serial.println();
+  Serial.print(F("RF_VERIFY,region,"));
+  if (regionOk) {
+    Serial.print(region);
+    Serial.print(',');
+    printRegionName(region);
+  } else {
+    Serial.print(F("NA,NA"));
+  }
+  Serial.println();
+
+  Serial.println(F("RF_TX,GET_POWER,AA00B70000B7DD"));
+  uint16_t readPower = 0;
+  const bool powerOk = r200.getTransmitPower(readPower);
+  Serial.print(F("RF_RX,GET_POWER,"));
+  Serial.print(powerOk ? F("OK,") : F("FALHA,"));
+  printLastRfFrame();
+  Serial.println();
+  Serial.print(F("RF_VERIFY,power_setpoint_centidbm,"));
+  if (powerOk) {
+    Serial.println(readPower);
+  } else {
+    Serial.println(F("NA"));
+  }
+
+  uint8_t observedChannels[20] = {0};
+  uint8_t observedCount = 0;
+  uint8_t successfulReads = 0;
+  uint8_t validPollTriggers = 0;
+  bool observedBrazilGap = false;
+  bool observedOutsideTargetSubbands = false;
+
+  for (uint8_t sample = 1; sample <= samples; ++sample) {
+    const PollMeasurement pollMeasurement = performSinglePoll();
+    if (pollMeasurement.status == MEASURE_TAG ||
+        pollMeasurement.status == MEASURE_NO_TAG) {
+      ++validPollTriggers;
+    }
+    Serial.print(F("RF_TX,GET_CHANNEL,"));
+    Serial.print(sample);
+    Serial.println(F(",AA00AA0000AADD"));
+    uint8_t channel = 0;
+    const bool channelOk = r200.getWorkingChannel(channel);
+
+    Serial.print(F("RF_RX,GET_CHANNEL,"));
+    Serial.print(sample);
+    Serial.print(',');
+    Serial.print(channelOk ? F("OK,") : F("FALHA,"));
+    printLastRfFrame();
+    Serial.println();
+
+    Serial.print(F("RF_VERIFY,channel_sample,"));
+    Serial.print(sample);
+    Serial.print(',');
+    if (channelOk) {
+      ++successfulReads;
+      Serial.print(channel);
+      Serial.print(',');
+      if (regionOk && region == 0x02) {
+        printUsFrequencyMHz(channel);
+        Serial.print(F(",MHz,"));
+        const bool inDocumentedSubbands =
+            channel <= 10U || (channel >= 26U && channel <= 51U);
+        Serial.print(inDocumentedSubbands ? 1 : 0);
+        if (!inDocumentedSubbands) {
+          observedOutsideTargetSubbands = true;
+        }
+        if (channel >= 11U && channel <= 25U) {
+          observedBrazilGap = true;
+        }
+      } else {
+        Serial.print(F("NA,NA,NA"));
+      }
+
+      bool alreadyObserved = false;
+      for (uint8_t index = 0; index < observedCount; ++index) {
+        if (observedChannels[index] == channel) {
+          alreadyObserved = true;
+          break;
+        }
+      }
+      if (!alreadyObserved && observedCount < sizeof(observedChannels)) {
+        observedChannels[observedCount++] = channel;
+      }
+    } else {
+      Serial.print(F("NA,NA,NA,NA"));
+    }
+    Serial.print(F(",poll_status,"));
+    Serial.println(static_cast<uint8_t>(pollMeasurement.status));
+    delay(100);
+  }
+
+  Serial.print(F("RF_VERIFY_SUMMARY,region_read_ok,"));
+  Serial.print(regionOk ? 1 : 0);
+  Serial.print(F(",region_known,"));
+  Serial.print(regionOk && isKnownRegion(region) ? 1 : 0);
+  Serial.print(F(",power_setpoint_read_ok,"));
+  Serial.print(powerOk ? 1 : 0);
+  Serial.print(F(",power_in_rpeum26_range,"));
+  Serial.print(powerOk && readPower >= 500U && readPower <= 2600U &&
+                       readPower % 100U == 0
+                   ? 1
+                   : 0);
+  Serial.print(F(",poll_trigger_valid_count,"));
+  Serial.print(validPollTriggers);
+  Serial.print(F(",channel_snapshot_read_ok,"));
+  Serial.print(successfulReads);
+  Serial.print(F(",channels_distinct,"));
+  Serial.print(observedCount);
+  Serial.print(F(",gap_907_5_915_observed,"));
+  if (regionOk && region == 0x02 && successfulReads > 0) {
+    Serial.println(observedBrazilGap ? 1 : 0);
+  } else {
+    Serial.println(F("NA"));
+  }
+  Serial.print(F("RF_VERIFY_SUMMARY,outside_target_subbands_observed,"));
+  if (regionOk && region == 0x02 && successfulReads > 0) {
+    Serial.println(observedOutsideTargetSubbands ? 1 : 0);
+  } else {
+    Serial.println(F("NA"));
+  }
+  Serial.println(F("RF_VERIFY,fhss_readback,NAO_DISPONIVEL_NO_PROTOCOLO_V2_3_3"));
+  Serial.println(F("RF_VERIFY,regulatory_status,NAO_INFERIR_CONFORMIDADE_SO_PELO_PERFIL"));
+  Serial.println(F("# RF_VERIFY_END"));
 }
 
 void listTags() {
@@ -603,16 +789,36 @@ void handleInventoryCommand(char *roundText, char *durationText,
 
 void handlePowerCommand(char *powerText) {
   unsigned long power = 0;
-  if (!parseUnsigned(powerText, power) || power > 3300UL) {
-    Serial.println(F("ERROR,POWER,VALOR_INVALIDO"));
+  if (!parseUnsigned(powerText, power) || power < 500UL || power > 2600UL ||
+      power % 100UL != 0) {
+    Serial.println(F("ERROR,POWER,USE_500_A_2600_EM_PASSOS_DE_100"));
     return;
   }
-  currentPowerCentiDbm = static_cast<uint16_t>(power);
-  r200.setTransmitPower(currentPowerCentiDbm);
+  requestedPowerCentiDbm = static_cast<uint16_t>(power);
+  r200.setTransmitPower(requestedPowerCentiDbm);
   delay(250);
-  r200.discardInput();
-  Serial.print(F("OK,POWER_NOMINAL_ENVIADA,"));
-  Serial.println(currentPowerCentiDbm);
+  uint16_t readPower = 0;
+  const bool readbackOk = r200.getTransmitPower(readPower);
+  Serial.print(F("POWER_RESULT,requested_setpoint_centidbm,"));
+  Serial.print(requestedPowerCentiDbm);
+  Serial.print(F(",readback_setpoint_centidbm,"));
+  if (readbackOk) {
+    Serial.print(readPower);
+  } else {
+    Serial.print(F("NA"));
+  }
+  Serial.print(F(",match,"));
+  Serial.println(readbackOk && readPower == requestedPowerCentiDbm ? 1 : 0);
+}
+
+void handleVerifyRfCommand(char *samplesText) {
+  unsigned long samples = 10;
+  if (samplesText != NULL &&
+      (!parseUnsigned(samplesText, samples) || samples < 1 || samples > 20)) {
+    Serial.println(F("ERROR,VERIFY_RF,AMOSTRAS_DEVE_SER_1_A_20"));
+    return;
+  }
+  verifyRfConfiguration(static_cast<uint8_t>(samples));
 }
 
 void processCommand(char *line) {
@@ -644,6 +850,8 @@ void processCommand(char *line) {
     handleInventoryCommand(roundText, durationText, expectedText);
   } else if (strcmp(command, "POWER") == 0) {
     handlePowerCommand(strtok(NULL, ","));
+  } else if (strcmp(command, "VERIFY_RF") == 0) {
+    handleVerifyRfCommand(strtok(NULL, ","));
   } else if (strcmp(command, "POLL") == 0) {
     diagnosticPoll();
   } else {
@@ -686,7 +894,7 @@ void setup() {
   r200.setMultiplePollingMode(false);
   delay(250);
   r200.discardInput();
-  r200.setTransmitPower(currentPowerCentiDbm);
+  r200.setTransmitPower(requestedPowerCentiDbm);
   delay(250);
   r200.discardInput();
 

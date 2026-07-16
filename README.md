@@ -10,6 +10,11 @@ conferência, mas não integram a versão pública do repositório.
 O roteiro de campo está em `PROTOCOLO_EXPERIMENTO_MINIMO.md`. Ele descreve a
 montagem, as janelas de coleta e a ordem dos ensaios executados.
 
+Os ensaios futuros com rotação entre tags e suportes, repetição em outro dia,
+comparação real de antenas, verificação do adequador de nível e leitura posterior
+da configuração de RF estão em `GUIA_CAMPANHA_COMPLEMENTAR_RFID.md`. Esses
+protocolos ainda não integram os resultados apresentados na monografia.
+
 Para criar, em uso local, um formulário tabular vazio com a estrutura da coleta,
 use:
 

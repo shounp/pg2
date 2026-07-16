@@ -8,7 +8,7 @@ O sketch `arduino_rfid.ino` executa as janelas descritas em
 | YPD-R200 | Arduino Uno/Nano | Observação |
 |---|---|---|
 | TXD | D10 | RX do `SoftwareSerial` |
-| RXD | D11 | Usar divisor/conversor de nível de 5 V para 3,3 V |
+| RXD | D11 | Usar adequador de nível identificado e eletricamente verificado |
 | GND | GND comum | Fonte, leitor e Arduino no mesmo GND |
 | 5 V | Fonte externa de 5 V/1 A ou pino de 5 V do Arduino alimentado por USB | As duas formas foram usadas; a fonte deve suportar os picos de corrente do módulo |
 
@@ -120,11 +120,22 @@ HELP
 INFO
 POLL
 POWER,2600
+VERIFY_RF,20
 ```
 
-`POWER,2600` envia o valor nominal de 26,00 dBm, mas o firmware não lê de volta a
-configuração. Região, canal e FHSS também não são confirmados pelo código; isso
-deve ser declarado no registro de configuração da coleta.
+`POWER` aceita de 500 a 2600 centésimos de dBm, em passos de 100, faixa da
+variante RPEUM-26 descrita no datasheet. Confirme a variante física antes de
+usar o limite superior. O comando compara o valor solicitado com a leitura
+posterior da configuração interna do módulo.
+Esse retorno não mede a potência efetiva de RF. `VERIFY_RF` lê a região, o valor
+configurado de potência e amostras do canal atual, preservando os quadros recebidos em
+hexadecimal. O protocolo do fabricante não oferece leitura posterior do estado
+do FHSS nem da lista completa de canais, de modo que amostras de canal não
+comprovam sozinhas toda a sequência de salto.
+
+O procedimento completo para conferir o adequador de nível, interpretar o
+readback e executar os novos ensaios está em
+`GUIA_CAMPANHA_COMPLEMENTAR_RFID.md`.
 
 Ao finalizar, copie todo o conteúdo do monitor serial para um arquivo de texto e
 preserve-o junto com os demais registros e as fotografias da montagem.

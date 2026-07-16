@@ -1,3 +1,6 @@
+# 0) Preserve o bloco de evidência de região, canal e potência.
+VERIFY_RF,20
+
 # 1) Isole cada tag, envie POLL, copie o EPC e substitua os exemplos abaixo.
 TAG,1,COLE_O_EPC_DA_TAG1
 TAG,2,COLE_O_EPC_DA_TAG2
